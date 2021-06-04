@@ -4,10 +4,12 @@ go_library(
     name = "go_default_library",
     srcs = [
         "bool.go",
+        "byte.go",
         "container.go",
         "list.go",
         "uint.go",
         "union.go",
+        "valrep.go",
         "vector.go",
     ],
     importpath = "github.com/prysmaticlabs/prysm/sszgen/types",
