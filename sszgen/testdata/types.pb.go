@@ -13,7 +13,7 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	github_com_prysmaticlabs_eth2_types "github.com/prysmaticlabs/eth2-types"
 	_ "github.com/prysmaticlabs/ethereumapis/eth/ext"
-	v1alpha1 "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
+	v1alpha1 "github.com/prysmaticlabs/prysm/proto/eth/v1alpha1"
 	github_com_prysmaticlabs_go_bitfield "github.com/prysmaticlabs/go-bitfield"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -668,6 +668,11 @@ func (x *CheckPtInfo) GetFork() *Fork {
 		return x.Fork
 	}
 	return nil
+}
+
+type TestBitlist struct {
+	AggregationBits github_com_prysmaticlabs_go_bitfield.Bitlist       `protobuf:"bytes,1,opt,name=aggregation_bits,json=aggregationBits,proto3" json:"aggregation_bits,omitempty" cast-type:"github.com/prysmaticlabs/go-bitfield.Bitlist" ssz-max:"2048"`
+	JustificationBits           github_com_prysmaticlabs_go_bitfield.Bitvector4 `protobuf:"bytes,8001,opt,name=justification_bits,json=justificationBits,proto3" json:"justification_bits,omitempty" cast-type:"github.com/prysmaticlabs/go-bitfield.Bitvector4" ssz-size:"1"`
 }
 
 type DepositMessage struct {

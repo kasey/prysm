@@ -1,7 +1,12 @@
 package types
 
 type ValueVector struct {
-	Name string
 	ElementValue ValRep
 	Size int
 }
+
+func (vv *ValueVector) TypeName() string {
+	return "[]" + vv.ElementValue.TypeName()
+}
+
+var _ ValRep = &ValueVector{}

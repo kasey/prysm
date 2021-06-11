@@ -34,15 +34,10 @@ var generate = &cli.Command{
 		if c.NArg() > 0 {
 			sourcePackage = c.Args().Get(0)
 		}
-		index, err := sszgen.BuildPackageIndex(sourcePackage)
-		if err != nil {
-			return err
-		}
+		index := sszgen.NewPackageIndex()
 		rep := sszgen.NewRepresenter(index)
-		if err != nil {
-			return err
-		}
 
+		var err error
 		var specs []*sszgen.TypeSpec
 		if len(typeNames) > 0 {
 			for _, n := range strings.Split(strings.TrimSpace(typeNames), ",") {
@@ -69,7 +64,7 @@ var generate = &cli.Command{
 		mf := &sszgen.MergedFile{}
 
 		for _, s := range specs {
-			typeRep, err := rep.GetRepresentation(s)
+			typeRep, err := rep.GetDeclaration(s)
 			if err != nil {
 				return err
 			}

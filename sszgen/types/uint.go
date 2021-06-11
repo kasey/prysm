@@ -15,3 +15,9 @@ type ValueUint struct {
 	Name string
 	Size UintSize
 }
+
+func (vu *ValueUint) TypeName() string {
+	return vu.Name
+}
+
+var _ ValRep = &ValueUint{}
