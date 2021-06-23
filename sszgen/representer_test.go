@@ -56,14 +56,15 @@ func TestSimpleStructRepresentation(t *testing.T) {
 	require.Equal(t, true, ok, "Expected the result to be a ValueContainer type, got %v", typename(r))
 
 	// test simple "overlay" values
-	overlayValRep, ok := container.Contents["MuhPrim"]
-	require.Equal(t, true, ok, "Expected \"MuhPrim\" to be in container")
+	overlayValRep, err := container.GetField("MuhPrim")
+	require.NoError(t, err)
 	overlay, ok := overlayValRep.(*types.ValueOverlay)
 	require.Equal(t, true, ok, "Expected the result to be a ValueOverlay type, got %v", typename(overlayValRep))
 	require.Equal(t, "AliasedPrimitive", overlay.TypeName())
 	require.Equal(t, overlay.Underlying.TypeName(), "uint64")
 
-	uintValRep, ok := container.Contents["GenesisTime"]
+	uintValRep, err := container.GetField("GenesisTime")
+	require.NoError(t, err)
 	require.Equal(t, true, ok, "Expected \"GenesisTime\" to be in container")
 	require.Equal(t, "uint64", uintValRep.TypeName())
 	uintType, ok := uintValRep.(*types.ValueUint)
@@ -82,7 +83,8 @@ func TestStructVectors(t *testing.T) {
 	container, ok := r.(*types.ValueContainer)
 	require.Equal(t, true, ok, "Expected the result to be a ValueContainer type, got %v", typename(r))
 
-	vectorValRep, ok := container.Contents["GenesisValidatorsRoot"]
+	vectorValRep, err := container.GetField("GenesisValidatorsRoot")
+	require.NoError(t, err)
 	require.Equal(t, true, ok, "Expected \"GenesisValidatorsRoot\" to be in container")
 	vector, ok := vectorValRep.(*types.ValueVector)
 	require.Equal(t, true, ok, "Expected the result to be a ValueVector type, got %v", typename(vectorValRep))
@@ -92,8 +94,8 @@ func TestStructVectors(t *testing.T) {
 	require.Equal(t, byteVal.TypeName(), "byte")
 	require.Equal(t, 32, vector.Size)
 
-	vectorValRep2d, ok := container.Contents["BlockRoots"]
-	require.Equal(t, true, ok, "Expected \"BlockRoots\" to be in container")
+	vectorValRep2d, err := container.GetField("BlockRoots")
+	require.NoError(t, err)
 	vector2d, ok := vectorValRep2d.(*types.ValueVector)
 	require.Equal(t, true, ok, "Expected \"BlockRoots\" to be type ValueVector, got %v", typename(vector2d))
 	require.Equal(t, 8192, vector2d.Size)
@@ -116,8 +118,8 @@ func TestVectorInListInStruct(t *testing.T) {
 	container, ok := r.(*types.ValueContainer)
 	require.Equal(t, true, ok, "Expected the result to be a ValueContainer type, got %v", typename(r))
 
-	listValRep, ok := container.Contents["HistoricalRoots"]
-	require.Equal(t, true, ok, "Expected \"HistoricalRoots\" to be in container")
+	listValRep, err := container.GetField("HistoricalRoots")
+	require.NoError(t, err)
 	require.Equal(t, "[][]byte", listValRep.TypeName())
 	list, ok := listValRep.(*types.ValueList)
 	require.Equal(t, true, ok, "Expected the result to be a ValueOverlay type, got %v", typename(listValRep))
@@ -143,19 +145,19 @@ func TestContainerField(t *testing.T) {
 	container, ok := r.(*types.ValueContainer)
 	require.Equal(t, true, ok, "Expected the result to be a ValueContainer type, got %v", typename(r))
 
-	fieldValRep, ok := container.Contents["ContainerField"]
-	require.Equal(t, true, ok, "Expected \"ContainerField\" to be in container")
+	fieldValRep, err := container.GetField("ContainerField")
+	require.NoError(t, err)
 	require.Equal(t, "ContainerType", fieldValRep.TypeName())
 	field, ok := fieldValRep.(*types.ValueContainer)
 	require.Equal(t, true, ok, "Expected the result to be a ValueContainer type, got %v", typename(fieldValRep))
-	require.Equal(t, 1, len(field.Contents))
+	require.Equal(t, 1, len(field.Fields()))
 
-	refFieldValRep, ok := container.Contents["ContainerRefField"]
-	require.Equal(t, true, ok, "Expected \"ContainerRefField\" to be in container")
+	refFieldValRep, err := container.GetField("ContainerRefField")
+	require.NoError(t, err)
 	require.Equal(t, "AnotherContainerType", refFieldValRep.TypeName())
 	refField, ok := refFieldValRep.(*types.ValueContainer)
 	require.Equal(t, true, ok, "Expected the result to be a ValueContainer type, got %v", typename(refFieldValRep))
-	require.Equal(t, 1, len(refField.Contents))
+	require.Equal(t, 1, len(refField.Fields()))
 }
 
 func TestListContainers(t *testing.T) {
@@ -168,24 +170,24 @@ func TestListContainers(t *testing.T) {
 	container, ok := r.(*types.ValueContainer)
 	require.Equal(t, true, ok, "Expected the result to be a ValueContainer type, got %v", typename(r))
 
-	conlistValRep, ok := container.Contents["ContainerList"]
-	require.Equal(t, true, ok, "Expected \"ContainerList\" to be in container")
+	conlistValRep, err := container.GetField("ContainerList")
+	require.NoError(t, err)
 	require.Equal(t, "[]ContainerType", conlistValRep.TypeName())
 	conlist, ok := conlistValRep.(*types.ValueList)
 	require.Equal(t, true, ok, "Expected the result to be a ValueListtype, got %v", typename(conlistValRep))
 	require.Equal(t, 23, conlist.MaxSize)
 	require.Equal(t, "ContainerType", conlist.ElementValue.TypeName())
 
-	conVecValRep, ok := container.Contents["ContainerVector"]
-	require.Equal(t, true, ok, "Expected \"ContainerVector\" to be in container")
+	conVecValRep, err := container.GetField("ContainerVector")
+	require.NoError(t, err)
 	require.Equal(t, "[]ContainerType", conVecValRep.TypeName())
 	conVec, ok := conVecValRep.(*types.ValueVector)
 	require.Equal(t, true, ok, "Expected the result to be a ValueVec, got %v", typename(conVecValRep))
 	require.Equal(t, 42, conVec.Size)
 	require.Equal(t, "ContainerType", conVec.ElementValue.TypeName())
 
-	conVecValRefRep, ok := container.Contents["ContainerVectorRef"]
-	require.Equal(t, true, ok, "Expected \"ContainerVectorRef\" to be in container")
+	conVecValRefRep, err := container.GetField("ContainerVectorRef")
+	require.NoError(t, err)
 	require.Equal(t, "[]*ContainerType", conVecValRefRep.TypeName())
 	conVecRef, ok := conVecValRefRep.(*types.ValueVector)
 	require.Equal(t, true, ok, "Expected the result to be a ValueVector, got %v", typename(conVecValRefRep))
@@ -196,8 +198,8 @@ func TestListContainers(t *testing.T) {
 	require.Equal(t, "ContainerType", conVecReferent.TypeName())
 	require.Equal(t, 17, conVecRef.Size)
 
-	conListValRefRep, ok := container.Contents["ContainerListRef"]
-	require.Equal(t, true, ok, "Expected \"ContainerListRef\" to be in container")
+	conListValRefRep, err := container.GetField("ContainerListRef")
+	require.NoError(t, err)
 	require.Equal(t, "[]*ContainerType", conListValRefRep.TypeName())
 	conListRef, ok := conListValRefRep.(*types.ValueList)
 	require.Equal(t, true, ok, "Expected the result to be a ValueList, got %v", typename(conListValRefRep))
@@ -219,8 +221,8 @@ func TestListOfOverlays(t *testing.T) {
 	container, ok := r.(*types.ValueContainer)
 	require.Equal(t, true, ok, "Expected the result to be a ValueContainer type, got %v", typename(r))
 
-	overlayListRep, ok := container.Contents["OverlayList"]
-	require.Equal(t, true, ok, "Expected \"OverlayList\" to be present in container")
+	overlayListRep, err := container.GetField("OverlayList")
+	require.NoError(t, err)
 	require.Equal(t, "[]AliasedPrimitive", overlayListRep.TypeName())
 	overlayList, ok := overlayListRep.(*types.ValueList)
 	require.Equal(t, true, ok, "Expected a ValueList, got %v", typename(overlayListRep))
@@ -233,8 +235,8 @@ func TestListOfOverlays(t *testing.T) {
 	require.Equal(t, true, ok, "Expected a ValueUint, got %v", typename(overlay.Underlying))
 	require.Equal(t, types.UintSize(64), underlying.Size)
 
-	overlayListRefRep, ok := container.Contents["OverlayListRef"]
-	require.Equal(t, true, ok, "Expected \"OverlayListRef\" to be present in container")
+	overlayListRefRep, err := container.GetField("OverlayListRef")
+	require.NoError(t, err)
 	require.Equal(t, "[]*AliasedPrimitive", overlayListRefRep.TypeName())
 	overlayRefList, ok := overlayListRefRep.(*types.ValueList)
 	require.Equal(t, true, ok, "Expected a ValueList, got %v", typename(overlayListRep))
@@ -261,8 +263,8 @@ func TestVectorOfOverlays(t *testing.T) {
 	container, ok := r.(*types.ValueContainer)
 	require.Equal(t, true, ok, "Expected the result to be a ValueContainer type, got %v", typename(r))
 
-	overlayVectorRep, ok := container.Contents["OverlayVector"]
-	require.Equal(t, true, ok, "Expected \"OverlayVector\" to be present in container")
+	overlayVectorRep, err := container.GetField("OverlayVector")
+	require.NoError(t, err)
 	require.Equal(t, "[]AliasedPrimitive", overlayVectorRep.TypeName())
 	overlayVector, ok := overlayVectorRep.(*types.ValueVector)
 	require.Equal(t, true, ok, "Expected a ValueList, got %v", typename(overlayVectorRep))
@@ -275,8 +277,8 @@ func TestVectorOfOverlays(t *testing.T) {
 	require.Equal(t, true, ok, "Expected a ValueUint, got %v", typename(overlay.Underlying))
 	require.Equal(t, types.UintSize(64), underlying.Size)
 
-	overlayVectorRefRep, ok := container.Contents["OverlayVectorRef"]
-	require.Equal(t, true, ok, "Expected \"OverlayVectorRef\" to be present in container")
+	overlayVectorRefRep, err := container.GetField("OverlayVectorRef")
+	require.NoError(t, err)
 	require.Equal(t, "[]*AliasedPrimitive", overlayVectorRefRep.TypeName())
 	overlayRefVector, ok := overlayVectorRefRep.(*types.ValueVector)
 	require.Equal(t, true, ok, "Expected a ValueVector, got %v", typename(overlayVectorRep))
@@ -323,8 +325,8 @@ func TestBitlist(t *testing.T) {
 	container, ok := testBitlist.(*types.ValueContainer)
 	require.Equal(t, true, ok, "Expected \"TestBitlist\" to be type ValueContainer, got %v", typename(testBitlist))
 
-	overlayValRep, ok := container.Contents["AggregationBits"]
-	require.Equal(t, true, ok, "Expected \"AggregationBits\" to be in container")
+	overlayValRep, err:= container.GetField("AggregationBits")
+	require.NoError(t, err)
 	overlay, ok := overlayValRep.(*types.ValueOverlay)
 	require.Equal(t, true, ok, "Expected the result to be a ValueOverlay type, got %v", typename(overlayValRep))
 	require.Equal(t, "Bitlist", overlay.TypeName())
@@ -336,8 +338,8 @@ func TestBitlist(t *testing.T) {
 	_, ok = underlying.ElementValue.(*types.ValueByte)
 	require.Equal(t, true, ok, "Expected the result to be a ValueByte type, got %v", typename(underlying.ElementValue))
 
-	overlayVecValRep, ok := container.Contents["JustificationBits"]
-	require.Equal(t, true, ok, "Expected \"JustificationBits\" to be in container")
+	overlayVecValRep, err:= container.GetField("JustificationBits")
+	require.NoError(t, err)
 	overlayVec, ok := overlayVecValRep.(*types.ValueOverlay)
 	require.Equal(t, true, ok, "Expected the result to be a ValueOverlay type, got %v", typename(overlayVec))
 	require.Equal(t, "Bitvector4", overlayVec.TypeName())

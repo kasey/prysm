@@ -11,17 +11,11 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-type TypeSpec struct {
+type ParseNode struct {
 	PackagePath    string
 	Name           string
-	// TODO: rename TypeSpec to something that doesn't collide with ast.TypeSpec
-	// also instead of TypeExpression, compose the entire typespec in case comments
-	// or other properties are useful. Now that code is not trying to use the "light"
-	// TypeSpec as a PackagePath+Name tuple, we can easily pull Name out of the TypeSpec
-	// maybe make func accessors for things like Name()
 	typeSpec *ast.TypeSpec
 	typeExpression ast.Expr
-	//TypeExpression ast.Expr
 	FileParser FileParser
 	PackageParser  PackageParser
 	ValRep         types.ValRep
@@ -29,7 +23,16 @@ type TypeSpec struct {
 	IsReference bool
 }
 
-func (ts *TypeSpec) TypeExpression() ast.Expr {
+func (pn *ParseNode) DeclarationRef() *DeclarationRef {
+	return &DeclarationRef{Name: pn.Name, Package: pn.PackagePath}
+}
+
+type DeclarationRef struct {
+	Name string
+	Package string
+}
+
+func (ts *ParseNode) TypeExpression() ast.Expr {
 	if ts.typeSpec != nil {
 		return ts.typeSpec.Type
 	}
@@ -62,8 +65,8 @@ func (afp *astFileParser) ResolveAlias(alias string) (string, error) {
 
 type PackageParser interface {
 	Imports() ([]*ast.ImportSpec, error)
-	AllTypes() []*TypeSpec
-	GetType(name string) (*TypeSpec, error)
+	AllParseNodes() []*ParseNode
+	GetType(name string) (*ParseNode, error)
 	Path() string // parser's package path
 }
 
@@ -82,8 +85,8 @@ func (pp *packageParser) Imports() ([]*ast.ImportSpec, error) {
 	return imports, nil
 }
 
-func (pp *packageParser) AllTypes() []*TypeSpec {
-	structs := make([]*TypeSpec, 0)
+func (pp *packageParser) AllParseNodes() []*ParseNode {
+	structs := make([]*ParseNode, 0)
 	for fname, f := range pp.files {
 		for name, obj := range f.Scope.Objects {
 			if obj.Kind != ast.Typ {
@@ -93,7 +96,7 @@ func (pp *packageParser) AllTypes() []*TypeSpec {
 			if !ok {
 				continue
 			}
-			ts := &TypeSpec{
+			ts := &ParseNode{
 				Name:           name,
 				//TypeExpression: typeSpec.Type,
 				typeSpec: typeSpec,
@@ -106,7 +109,7 @@ func (pp *packageParser) AllTypes() []*TypeSpec {
 	return structs
 }
 
-func (pp *packageParser) GetType(name string) (*TypeSpec, error) {
+func (pp *packageParser) GetType(name string) (*ParseNode, error) {
 	for fname, f := range pp.files {
 		for objName, obj := range f.Scope.Objects {
 			if obj.Kind != ast.Typ {
@@ -117,7 +120,7 @@ func (pp *packageParser) GetType(name string) (*TypeSpec, error) {
 				continue
 			}
 			if name == objName {
-				return &TypeSpec{
+				return &ParseNode{
 					Name:           objName,
 					//TypeExpression: typeSpec.Type,
 					typeSpec: typeSpec,

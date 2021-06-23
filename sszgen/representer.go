@@ -15,13 +15,13 @@ func NewRepresenter(pi *PackageIndex) *Representer {
 	return &Representer{index: pi}
 }
 
-type typeSpecMutator func(*TypeSpec)
+type typeSpecMutator func(*ParseNode)
 
 // this is used to copy a tag from a field down into a declaration
-// representation. This is used to push tag data down into declaration parsing,
+// representation. This is usedTag to push tag data down into declaration parsing,
 // so that ssz-size/ssz-max can be applied to list/vector value types.
-func typeSpecMutatorCopyTag(source *TypeSpec) typeSpecMutator {
-	return func(target *TypeSpec) {
+func typeSpecMutatorCopyTag(source *ParseNode) typeSpecMutator {
+	return func(target *ParseNode) {
 		target.Tag = source.Tag
 	}
 }
@@ -31,8 +31,8 @@ func (r *Representer) GetDeclaration(packagePath, structName string, mutators ..
 	if err != nil {
 		return nil, err
 	}
-	// apply mutators to replicate any important TypeSpec properties
-	// from outer TypeSpec
+	// apply mutators to replicate any important ParseNode properties
+	// from outer ParseNode
 	for _, mut := range mutators {
 		mut(ts)
 	}
@@ -40,7 +40,7 @@ func (r *Representer) GetDeclaration(packagePath, structName string, mutators ..
 	case *ast.StructType:
 		vr := &types.ValueContainer{
 			Name:     ts.Name,
-			Contents: make(map[string]types.ValRep),
+			Package: packagePath,
 		}
 		for _, f := range ty.Fields.List {
 			// this filters out internal protobuf fields, but also serializers like us
@@ -50,7 +50,7 @@ func (r *Representer) GetDeclaration(packagePath, structName string, mutators ..
 				continue
 			}
 			fieldName := f.Names[0].Name
-			s := &TypeSpec{
+			s := &ParseNode{
 				FileParser:     ts.FileParser,
 				PackageParser:  ts.PackageParser,
 				typeExpression: f.Type,
@@ -62,7 +62,7 @@ func (r *Representer) GetDeclaration(packagePath, structName string, mutators ..
 			if err != nil {
 				return nil, err
 			}
-			vr.Contents[fieldName] = rep
+			vr.Contents = append(vr.Contents, types.ContainerField{fieldName, rep})
 		}
 		return vr, nil
 	case *ast.Ident:
@@ -78,7 +78,7 @@ func (r *Representer) GetDeclaration(packagePath, structName string, mutators ..
 		}
 		// the underlying ValRep will be a primitive value and its .TypeName()
 		// will reflect its storage type, not the overlay name
-		return &types.ValueOverlay{Name: ts.Name, Underlying: underlying}, nil
+		return &types.ValueOverlay{Name: ts.Name, Package: packagePath, Underlying: underlying}, nil
 	case *ast.ArrayType:
 		// we can also have an "overlay" array, like the Bitlist types
 		// from github.com/prysmaticlabs/go-bitfield
@@ -87,18 +87,18 @@ func (r *Representer) GetDeclaration(packagePath, structName string, mutators ..
 		if err != nil {
 			return nil, err
 		}
-		return &types.ValueOverlay{Name: ts.Name, Underlying: underlying}, nil
+		return &types.ValueOverlay{Name: ts.Name, Package: packagePath, Underlying: underlying}, nil
 	default:
 		return nil, fmt.Errorf("Unsupported ast.Expr type for %v", ts.TypeExpression())
 	}
 }
 
-func (r *Representer) expandRepresentation(ts *TypeSpec) (types.ValRep, error) {
+func (r *Representer) expandRepresentation(ts *ParseNode) (types.ValRep, error) {
 	switch ty := ts.typeExpression.(type) {
 	case *ast.ArrayType:
 		return r.expandArrayHead(ty, ts)
 	case *ast.StarExpr:
-		referentTS := &TypeSpec{
+		referentTS := &ParseNode{
 			FileParser:     ts.FileParser,
 			PackageParser:  ts.PackageParser,
 			typeExpression: ty.X,
@@ -123,8 +123,7 @@ func (r *Representer) expandRepresentation(ts *TypeSpec) (types.ValRep, error) {
 	}
 }
 
-
-func (r *Representer) expandArrayHead(art *ast.ArrayType, ts *TypeSpec) (types.ValRep, error) {
+func (r *Representer) expandArrayHead(art *ast.ArrayType, ts *ParseNode) (types.ValRep, error) {
 	dims, err := extractSSZDimensions(ts.Tag)
 	if err != nil {
 		return nil, err
@@ -132,7 +131,7 @@ func (r *Representer) expandArrayHead(art *ast.ArrayType, ts *TypeSpec) (types.V
 	return r.expandArray(dims, art, ts)
 }
 
-func (r *Representer) expandArray(dims []*SSZDimension, art *ast.ArrayType, ts *TypeSpec) (types.ValRep, error) {
+func (r *Representer) expandArray(dims []*SSZDimension, art *ast.ArrayType, ts *ParseNode) (types.ValRep, error) {
 	if len(dims) == 0 {
 		return nil, fmt.Errorf("do not have dimension information for type %v", ts)
 	}
@@ -146,7 +145,7 @@ func (r *Representer) expandArray(dims []*SSZDimension, art *ast.ArrayType, ts *
 			return nil, err
 		}
 	default:
-		elv, err = r.expandRepresentation(&TypeSpec{
+		elv, err = r.expandRepresentation(&ParseNode{
 			FileParser: ts.FileParser,
 			PackageParser: ts.PackageParser,
 			typeExpression: elt,
@@ -164,7 +163,6 @@ func (r *Representer) expandArray(dims []*SSZDimension, art *ast.ArrayType, ts *
 	}
 	if d.IsList() {
 		return &types.ValueList{
-			Name: ts.Name,
 			ElementValue: elv,
 			MaxSize: d.ListLen(),
 		}, nil
@@ -172,7 +170,7 @@ func (r *Representer) expandArray(dims []*SSZDimension, art *ast.ArrayType, ts *
 	return nil, nil
 }
 
-func (r *Representer) expandIdent(ident *ast.Ident, ts *TypeSpec) (types.ValRep, error) {
+func (r *Representer) expandIdent(ident *ast.Ident, ts *ParseNode) (types.ValRep, error) {
 	switch ident.Name {
 	case "bool":
 		return &types.ValueBool{Name: ident.Name}, nil

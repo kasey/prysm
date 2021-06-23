@@ -9,7 +9,7 @@ import (
 func newTestIndexer() *PackageIndex {
 	return &PackageIndex{
 		index: make(map[string]PackageParser),
-		structCache: make(map[[2]string]*TypeSpec),
+		structCache: make(map[[2]string]*ParseNode),
 	}
 }
 

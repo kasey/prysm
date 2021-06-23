@@ -1,34 +1,33 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 
 	"github.com/prysmaticlabs/prysm/sszgen"
-	"github.com/prysmaticlabs/prysm/sszgen/backend"
+	"github.com/prysmaticlabs/prysm/sszgen/testutil"
 	"github.com/urfave/cli/v2"
 )
 
-var sourcePackage, output, typeNames string
-var generate = &cli.Command{
-	Name:    "generate",
+var ir = &cli.Command{
+	Name:    "ir",
 	ArgsUsage: "<input package, eg github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1>",
 	Aliases: []string{"gen"},
-	Usage:   "generate methodsets for a go struct type to support ssz ser/des",
+	Usage:   "generate intermediate representation for a go struct type. This data structure is used by the backend code generator. Outputting it to a source file an be useful for generating test cases and debugging.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "output",
 			Value:       "",
-			Usage:       "directory to write generated code (same as input by default)",
+			Usage:       "file path to write generated code",
 			Destination: &output,
+			Required: true,
 		},
 		&cli.StringFlag{
 			Name:        "type-names",
 			Value:       "",
-			Usage:       "if specified, only generate methods for types specified in this comma-separated list",
+			Usage:       "if specified, only generate types specified in this comma-separated list",
 			Destination: &typeNames,
 		},
 	},
@@ -55,28 +54,29 @@ var generate = &cli.Command{
 			return fmt.Errorf("Could not find any codegen targets in source package %s", sourcePackage)
 		}
 
-		if output == "" {
-			output = "generated.ssz.go"
-		}
 		outFh, err := os.Create(output)
 		defer outFh.Close()
 		if err != nil {
 			return err
 		}
 
-		g := backend.NewGenerator(sourcePackage)
+		renderedTypes := make([]string, 0)
 		for _, s := range specs {
 			typeRep, err := rep.GetDeclaration(s.Package, s.Name)
 			if err != nil {
 				return err
 			}
-			g.Generate(typeRep)
+			rendered, err := testutil.RenderIntermediate(typeRep)
+			if err != nil {
+				return err
+			}
+			renderedTypes = append(renderedTypes, rendered)
 		}
-		rbytes, err := g.Render()
 		if err != nil {
 			return err
 		}
-		_, err = io.Copy(outFh, bytes.NewReader(rbytes))
+
+		_, err = io.Copy(outFh, strings.NewReader(strings.Join(renderedTypes, "\n")))
 		return err
 	},
 }

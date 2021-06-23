@@ -3,13 +3,13 @@ package sszgen
 type PackageIndex struct {
 	sourcePackage string
 	index map[string]PackageParser
-	structCache map[[2]string]*TypeSpec
+	structCache map[[2]string]*ParseNode
 }
 
 func NewPackageIndex() *PackageIndex {
 	pi := &PackageIndex{
 		index: make(map[string]PackageParser),
-		structCache: make(map[[2]string]*TypeSpec),
+		structCache: make(map[[2]string]*ParseNode),
 	}
 	return pi
 }
@@ -26,15 +26,19 @@ func (pi *PackageIndex) getParser(packagePath string) (PackageParser, error) {
 	return pkg, err
 }
 
-func (pi *PackageIndex) PackageTypes(packagePath string) ([]*TypeSpec, error) {
+func (pi *PackageIndex) DeclarationRefs(packagePath string) ([]*DeclarationRef, error) {
 	pkg, err := pi.getParser(packagePath)
 	if err != nil {
 		return nil, err
 	}
-	return pkg.AllTypes(), nil
+	refs := make([]*DeclarationRef, 0)
+	for _, p := range pkg.AllParseNodes() {
+		refs = append(refs, p.DeclarationRef())
+	}
+	return refs, nil
 }
 
-func (pi *PackageIndex) GetType(packagePath, typeName string) (*TypeSpec, error) {
+func (pi *PackageIndex) GetType(packagePath, typeName string) (*ParseNode, error) {
 	cached, ok := pi.structCache[[2]string{packagePath,typeName}]
 	if ok {
 		return cached, nil
