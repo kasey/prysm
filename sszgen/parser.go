@@ -20,7 +20,6 @@ type ParseNode struct {
 	PackageParser  PackageParser
 	ValRep         types.ValRep
 	Tag string
-	IsReference bool
 }
 
 func (pn *ParseNode) DeclarationRef() *DeclarationRef {

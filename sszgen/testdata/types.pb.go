@@ -12,7 +12,7 @@ import (
 
 	proto "github.com/golang/protobuf/proto"
 	github_com_prysmaticlabs_eth2_types "github.com/prysmaticlabs/eth2-types"
-	_ "github.com/prysmaticlabs/ethereumapis/eth/ext"
+	_ "github.com/prysmaticlabs/prysm/proto/eth/ext"
 	v1alpha1 "github.com/prysmaticlabs/prysm/proto/eth/v1alpha1"
 	github_com_prysmaticlabs_go_bitfield "github.com/prysmaticlabs/go-bitfield"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
