@@ -1,20 +1,33 @@
 package backend
 
 import (
+	"fmt"
+
 	"github.com/prysmaticlabs/prysm/sszgen/types"
 )
 
 type generatePointer struct {
 	*types.ValuePointer
+	targetPackage string
 }
 
-func (g *generatePointer) GenerateSizeSSZ() *generatedCode {
-	return nil
+func (g *generatePointer) generateFixedMarshalValue(fieldName string) string {
+	gg := newValueGenerator(g.Referent, g.targetPackage)
+	return gg.generateFixedMarshalValue(fieldName)
+}
+
+func (g *generatePointer) generateVariableMarshalValue(fieldName string) string {
+	gg := newValueGenerator(g.Referent, g.targetPackage)
+	vm, ok := gg.(variableMarshaller)
+	if !ok {
+		panic(fmt.Sprintf("variable size type does not implement variableMarshaller: %v", g.Referent))
+	}
+	return vm.generateVariableMarshalValue(fieldName)
 }
 
 func (g *generatePointer) variableSizeSSZ(fieldName string) string {
-	gg := newMethodGenerator(g.Referent)
+	gg := newValueGenerator(g.Referent, g.targetPackage)
 	return gg.variableSizeSSZ(fieldName)
 }
 
-var _ methodGenerator = &generatePointer{}
+var _ valueGenerator = &generatePointer{}

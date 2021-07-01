@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
-	"text/template"
 	"strings"
+	"text/template"
 
 	"github.com/prysmaticlabs/prysm/sszgen/types"
 )
@@ -51,7 +51,7 @@ type Generator struct {
 }
 
 func (g *Generator) Generate(vr types.ValRep) {
-	mg := newMethodGenerator(vr)
+	mg := newMethodGenerator(vr, g.packageName)
 	sizeSSZ := mg.GenerateSizeSSZ()
 	if sizeSSZ != nil {
 		g.gc = append(g.gc, sizeSSZ)
@@ -75,7 +75,9 @@ func (g *Generator) Render() ([]byte, error) {
 		return nil, err
 	}
 	final := &generatedCode{
-		imports: make(map[string]string),
+		imports: map[string]string{
+			"github.com/ferranbt/fastssz": "ssz",
+		},
 	}
 	for _, gc := range g.gc {
 		final.merge(gc)
@@ -97,32 +99,64 @@ func (g *Generator) Render() ([]byte, error) {
 
 type methodGenerator interface {
 	GenerateSizeSSZ() *generatedCode
-	variableSizeSSZ(fieldname string) string
-	//GenerateMarshalSSZ() jen.Code
+	GenerateMarshalSSZ() *generatedCode
 	//GenerateUnmarshalSSZ() jen.Code
 	//GenerateHashTreeRoot() jen.Code
 }
 
-func newMethodGenerator(vr types.ValRep) methodGenerator {
+type valueGenerator interface {
+	variableSizeSSZ(fieldname string) string
+	generateFixedMarshalValue(string) string
+}
+
+type variableMarshaller interface {
+	generateVariableMarshalValue(string) string
+}
+
+type coercer interface {
+	coerce() func(string) string
+}
+
+func newValueGenerator(vr types.ValRep, packagePath string) valueGenerator {
 	switch ty := vr.(type) {
 	case *types.ValueBool:
-		return &generateBool{ty}
+		return &generateBool{ty, packagePath}
 	case *types.ValueByte:
-		return &generateByte{ty}
+		return &generateByte{ty, packagePath}
 	case *types.ValueContainer:
-		return &generateContainer{ty}
+		return &generateContainer{ty, packagePath}
 	case *types.ValueList:
-		return &generateList{ty}
+		return &generateList{ty, packagePath}
 	case *types.ValueOverlay:
-		return &generateOverlay{ty}
+		return &generateOverlay{ty, packagePath}
 	case *types.ValuePointer:
-		return &generatePointer{ty}
+		return &generatePointer{ty, packagePath}
 	case *types.ValueUint:
-		return &generateUint{ty}
+		return &generateUint{ty, packagePath}
 	case *types.ValueUnion:
-		return &generateUnion{ty}
+		return &generateUnion{ty, packagePath}
 	case *types.ValueVector:
-		return &generateVector{ty}
+		return &generateVector{ty, packagePath}
 	}
 	panic(fmt.Sprintf("Cannot manage generation for unrecognized ValRep implementation %v", vr))
+}
+
+func newMethodGenerator(vr types.ValRep, packagePath string) methodGenerator {
+	switch ty := vr.(type) {
+	case *types.ValueContainer:
+		return &generateContainer{ty, packagePath}
+	}
+	panic(fmt.Sprintf("Cannot manage generation for unrecognized ValRep implementation %v", vr))
+}
+
+func importAlias(packageName string) string {
+	parts := strings.Split(packageName, "/")
+	for i, p := range parts {
+		if strings.Contains(p, ".") {
+			continue
+		}
+		parts = parts[i:]
+		break
+	}
+	return strings.Join(parts, "_")
 }

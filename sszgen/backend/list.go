@@ -10,10 +10,17 @@ import (
 
 type generateList struct {
 	*types.ValueList
+	targetPackage string
 }
 
-func (g *generateList) GenerateSizeSSZ() *generatedCode {
-	return nil
+func (g *generateList) generateFixedMarshalValue(fieldName string) string {
+	tmpl := `dst = ssz.WriteOffset(dst, offset)
+offset += %s
+`
+	//gg := newValueGenerator(g.ElementValue)
+	offset := g.variableSizeSSZ(fieldName)
+
+	return fmt.Sprintf(tmpl, offset)
 }
 
 var variableSizedListTmpl = `func() int {
@@ -30,7 +37,7 @@ func (g *generateList) variableSizeSSZ(fieldName string) string {
 		return fmt.Sprintf("len(%s) * %d", fieldName, g.ElementValue.FixedSize())
 	}
 
-	gg := newMethodGenerator(g.ElementValue)
+	gg := newValueGenerator(g.ElementValue, g.targetPackage)
 	vslTmpl, err := template.New("variableSizedListTmpl").Parse(variableSizedListTmpl)
 	if err != nil {
 		panic(err)
@@ -49,4 +56,100 @@ func (g *generateList) variableSizeSSZ(fieldName string) string {
 	return string(buf.Bytes())
 }
 
-var _ methodGenerator = &generateList{}
+var generateVariableMarshalValueTmpl = `if len({{ .FieldName }}) > {{ .MaxSize }} {
+		return nil, ssz.ErrListTooBig
+}
+
+for _, o := range {{ .FieldName }} {
+		if len(o) != {{ .ElementSize }} {
+				return nil, ssz.ErrBytesLength
+		}
+		dst = append(dst, o) 
+}`
+
+var tmplVariableOffsetManagement = `{
+	offset = 4 * len({{.FieldName}})
+	for _, {{.NestedFieldName}} := range {{.FieldName}} {
+		dst = ssz.WriteOffset(dst, offset)
+		offset += {{.SizeComputation}}
+	}
+}
+`
+
+func variableOffsetManagement(vg valueGenerator, fieldName, nestedFieldName string) string {
+	vomt, err := template.New("tmplVariableOffsetManagement").Parse(tmplVariableOffsetManagement)
+	if err != nil {
+		panic(err)
+	}
+	buf := bytes.NewBuffer(nil)
+	err = vomt.Execute(buf, struct{
+		FieldName string
+		NestedFieldName string
+		SizeComputation string
+	}{
+		FieldName: fieldName,
+		NestedFieldName: nestedFieldName,
+		SizeComputation: vg.variableSizeSSZ(nestedFieldName),
+	})
+	if err != nil {
+		panic(err)
+	}
+	return string(buf.Bytes())
+}
+
+var tmplGenerateMarshalValueList = `if len({{.FieldName}}) > {{.MaxSize}} {
+	return nil, ssz.ErrListTooBig
+}
+{{.OffsetManagement}}{{.MarshalValue}}`
+
+func (g *generateList) generateVariableMarshalValue(fieldName string) string {
+	mvTmpl, err := template.New("tmplGenerateMarshalValueList").Parse(tmplGenerateMarshalValueList)
+	if err != nil {
+		panic(err)
+	}
+	var marshalValue string
+	var offsetMgmt string
+	switch g.ElementValue.(type) {
+	case *types.ValueByte:
+		marshalValue = fmt.Sprintf("dst = append(dst, %s...)", fieldName)
+	default:
+		nestedFieldName := "o"
+		if fieldName[0:1] == "o" && monoCharacter(fieldName) {
+			nestedFieldName = fieldName + "o"
+		}
+		t := `for _, %s := range %s {
+	%s
+}`
+		gg := newValueGenerator(g.ElementValue, g.targetPackage)
+		var internal string
+		if g.ElementValue.IsVariableSized() {
+			vm, ok := gg.(variableMarshaller)
+			if !ok {
+				panic(fmt.Sprintf("variable size type does not implement variableMarshaller: %v", g.ElementValue))
+			}
+			internal = vm.generateVariableMarshalValue(nestedFieldName)
+			offsetMgmt = variableOffsetManagement(gg, fieldName, nestedFieldName)
+		} else {
+			internal = gg.generateFixedMarshalValue(nestedFieldName)
+		}
+		marshalValue = fmt.Sprintf(t, nestedFieldName, fieldName, internal)
+	}
+	buf := bytes.NewBuffer(nil)
+	err = mvTmpl.Execute(buf, struct{
+		FieldName string
+		MaxSize int
+		MarshalValue string
+		OffsetManagement string
+	}{
+		FieldName: fieldName,
+		MaxSize: g.MaxSize,
+		MarshalValue: marshalValue,
+		OffsetManagement: offsetMgmt,
+	})
+	if err != nil {
+		panic(err)
+	}
+	return string(buf.Bytes())
+}
+
+var _ valueGenerator = &generateList{}

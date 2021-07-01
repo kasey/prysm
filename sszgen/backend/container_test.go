@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"go/format"
 	"testing"
 
 	"github.com/prysmaticlabs/prysm/shared/testutil/require"
@@ -14,14 +15,91 @@ func TestGenerateContainer_GenerateSizeSSZ(t *testing.T) {
 	size += len(c.Eth1DataVotes) * 72
 	size += len(c.Validators) * 121
 	size += len(c.Balances) * 8
+	size += func() int {
+	s := 0
+	for _, o := range c.PreviousEpochAttestations {
+		s += 4
+		s += c.PreviousEpochAttestations.SizeSSZ()
+	}
+	return s
+}()
+	size += func() int {
+	s := 0
+	for _, o := range c.CurrentEpochAttestations {
+		s += 4
+		s += c.CurrentEpochAttestations.SizeSSZ()
+	}
+	return s
+}()
 	return size
 }`
 
-	mg := newMethodGenerator(testFixBeaconState)
-	//expected := &generatedCode{}
+	mg := newMethodGenerator(testFixBeaconState, "")
 	gc := mg.GenerateSizeSSZ()
 	require.Equal(t, 0, len(gc.imports))
 	require.Equal(t, expected, gc.blocks[0])
+}
+
+func TestGenerateContainer_GenerateMarshalSSZ(t *testing.T) {
+	expected := `func (c *BeaconState) MarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(b)
+}
+
+func (c *BeaconState) MarshalSSZTo(buf []byte) ([]byte, error) {
+	offset := 2687377
+
+	// Field 0: GenesisTime
+	dst = ssz.MarshalUint64(dst, c.GenesisTime)
+	// Field 1: GenesisValidatorsRoot
+	
+	// Field 2: Slot
+	
+	// Field 3: Fork
+	
+	// Field 4: LatestBlockHeader
+	
+	// Field 5: BlockRoots
+	
+	// Field 6: StateRoots
+	
+	// Field 7: HistoricalRoots
+	
+	// Field 8: Eth1Data
+	
+	// Field 9: Eth1DataVotes
+	
+	// Field 10: Eth1DepositIndex
+	dst = ssz.MarshalUint64(dst, c.Eth1DepositIndex)
+	// Field 11: Validators
+	
+	// Field 12: Balances
+	
+	// Field 13: RandaoMixes
+	
+	// Field 14: Slashings
+	
+	// Field 15: PreviousEpochAttestations
+	
+	// Field 16: CurrentEpochAttestations
+	
+	// Field 17: JustificationBits
+	
+	// Field 18: PreviousJustifiedCheckpoint
+	
+	// Field 19: CurrentJustifiedCheckpoint
+	
+	// Field 20: FinalizedCheckpoint
+	
+}`
+
+	expectedFormatted, err := format.Source([]byte(expected))
+	require.NoError(t, err)
+	mg := newMethodGenerator(testFixBeaconState, "")
+	gc := mg.GenerateMarshalSSZ()
+	require.Equal(t, 0, len(gc.imports))
+	actual, err := format.Source([]byte(gc.blocks[0]))
+	require.NoError(t, err)
+	require.Equal(t, string(expectedFormatted), string(actual))
 }
 
 var testFixStatus types.ValRep = &types.ValueContainer{Name: "Status", Package: "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1", Contents: []types.ContainerField{{Key: "ForkDigest", Value: &types.ValueVector{Size: 4, ElementValue: &types.ValueByte{Name: "byte"}}}, {Key: "FinalizedRoot", Value: &types.ValueVector{Size: 32, ElementValue: &types.ValueByte{Name: "byte"}}}, {Key: "FinalizedEpoch", Value: &types.ValueOverlay{Name: "Epoch", Package: "github.com/prysmaticlabs/eth2-types", Underlying: &types.ValueUint{Name: "uint64", Size: 64}}}, {Key: "HeadRoot", Value: &types.ValueVector{Size: 32, ElementValue: &types.ValueByte{Name: "byte"}}}, {Key: "HeadSlot", Value: &types.ValueOverlay{Name: "Slot", Package: "github.com/prysmaticlabs/eth2-types", Underlying: &types.ValueUint{Name: "uint64", Size: 64}}}}}

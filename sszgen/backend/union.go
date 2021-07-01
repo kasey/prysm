@@ -6,14 +6,15 @@ import (
 
 type generateUnion struct {
 	*types.ValueUnion
+	targetPackage string
 }
 
-func (g *generateUnion) GenerateSizeSSZ() *generatedCode {
-	return nil
+func (g *generateUnion) generateFixedMarshalValue(fieldName string) string {
+	return ""
 }
 
 func (g *generateUnion) variableSizeSSZ(fieldname string) string {
 	return ""
 }
 
-var _ methodGenerator = &generateUnion{}
+var _ valueGenerator = &generateUnion{}

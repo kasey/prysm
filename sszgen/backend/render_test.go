@@ -35,6 +35,10 @@ func TestGenerator_Generate(t *testing.T) {
 
 var generator_generateBeaconStateFixture = `package derp
 
+import (
+	ssz "github.com/ferranbt/fastssz"
+)
+
 func (c *BeaconState) SizeSSZ() (size int) {
 	size := 2687377
 	size += len(c.HistoricalRoots) * 32
@@ -67,4 +71,27 @@ func TestGenerator_GenerateBeaconState(t *testing.T) {
 	rendered, err := g.Render()
 	require.NoError(t, err)
 	require.Equal(t, generator_generateBeaconStateFixture, string(rendered))
+}
+
+func TestImportAlias(t *testing.T) {
+	cases := []struct{
+		packageName string
+		alias string
+	}{
+		{
+			packageName: "github.com/derp/derp",
+			alias: "derp_derp",
+		},
+		{
+			packageName: "text/template",
+			alias: "text_template",
+		},
+		{
+			packageName: "fmt",
+			alias: "fmt",
+		},
+	}
+	for _, c := range cases {
+		require.Equal(t, importAlias(c.packageName), c.alias)
+	}
 }
