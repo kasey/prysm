@@ -56,6 +56,14 @@ func (g *Generator) Generate(vr types.ValRep) {
 	if sizeSSZ != nil {
 		g.gc = append(g.gc, sizeSSZ)
 	}
+	mSSZ := mg.GenerateMarshalSSZ()
+	if sizeSSZ != nil {
+		g.gc = append(g.gc, mSSZ)
+	}
+	uSSZ := mg.GenerateUnmarshalSSZ()
+	if sizeSSZ != nil {
+		g.gc = append(g.gc, uSSZ)
+	}
 }
 
 var fileTemplate = `package {{.Package}}
@@ -100,7 +108,7 @@ func (g *Generator) Render() ([]byte, error) {
 type methodGenerator interface {
 	GenerateSizeSSZ() *generatedCode
 	GenerateMarshalSSZ() *generatedCode
-	//GenerateUnmarshalSSZ() jen.Code
+	GenerateUnmarshalSSZ() *generatedCode
 	//GenerateHashTreeRoot() jen.Code
 }
 

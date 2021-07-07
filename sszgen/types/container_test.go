@@ -19,20 +19,43 @@ var testFixderp ValRep = &ValueContainer{
 
 func TestBeaconStateSizeSSZ(t *testing.T) {
 	require.Equal(t, 84, testFixStatus.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
 	require.Equal(t, 24, testFixBeaconBlocksByRangeRequest.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
 	require.Equal(t, 16, testFixENRForkID.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
+	require.Equal(t, 24, testFixBeaconBlocksByRangeRequest.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
 	require.Equal(t, 16, testFixMetaDataV0.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
+	require.Equal(t, 24, testFixBeaconBlocksByRangeRequest.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
 	require.Equal(t, 80, testFixMetaDataV1.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
+	require.Equal(t, 24, testFixBeaconBlocksByRangeRequest.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
+
 	require.Equal(t, 2687377, testFixBeaconState.FixedSize())
+	require.Equal(t, true, testFixBeaconState.IsVariableSized())
+
 	require.Equal(t, 2736629, testFixBeaconStateAltair.FixedSize())
+	require.Equal(t, true, testFixBeaconState.IsVariableSized())
 	require.Equal(t, 16, testFixFork.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
 	require.Equal(t, 148, testFixPendingAttestation.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
 	require.Equal(t, 524288, testFixHistoricalBatch.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
 	require.Equal(t, 64, testFixSigningData.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
 	require.Equal(t, 36, testFixForkData.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
 	require.Equal(t, 88, testFixDepositMessage.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
 	require.Equal(t, 24624, testFixSyncCommittee.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
 	require.Equal(t, 16, testFixSyncAggregatorSelectionData.FixedSize())
+	require.Equal(t, false, testFixStatus.IsVariableSized())
 }
 
 var testFixStatus ValRep = &ValueContainer{Name: "Status", Package: "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1", Contents: []ContainerField{{Key: "ForkDigest", Value: &ValueVector{Size: 4, ElementValue: &ValueByte{Name: "byte"}}}, {Key: "FinalizedRoot", Value: &ValueVector{Size: 32, ElementValue: &ValueByte{Name: "byte"}}}, {Key: "FinalizedEpoch", Value: &ValueOverlay{Name: "Epoch", Package: "github.com/prysmaticlabs/eth2-types", Underlying: &ValueUint{Name: "uint64", Size: 64}}}, {Key: "HeadRoot", Value: &ValueVector{Size: 32, ElementValue: &ValueByte{Name: "byte"}}}, {Key: "HeadSlot", Value: &ValueOverlay{Name: "Slot", Package: "github.com/prysmaticlabs/eth2-types", Underlying: &ValueUint{Name: "uint64", Size: 64}}}}}

@@ -105,7 +105,7 @@ func ({{.Receiver}} {{.Type}}) MarshalSSZTo(dst []byte) ([]byte, error) {
 }`
 
 func (g *generateContainer) GenerateMarshalSSZ() *generatedCode {
-	sizeTmpl, err := template.New("generateFixedMarshalValue").Parse(marshalBodyTmpl)
+	sizeTmpl, err := template.New("GenerateMarshalSSZ").Parse(marshalBodyTmpl)
 	if err != nil {
 		panic(err)
 	}
@@ -152,21 +152,43 @@ func (g *generateContainer) GenerateMarshalSSZ() *generatedCode {
 	}
 }
 
-/*
-		jen.Id("size").Op("+=").Id("len").Call(jen.Id("b").Dot("HistoricalRoots")).Op("*").Lit(32),
-		jen.Id("size").Op("+=").Id("len").Call(jen.Id("b").Dot("Eth1DataVotes")).Op("*").Lit(72),
-		jen.Id("size").Op("+=").Id("len").Call(jen.Id("b").Dot("Validators")).Op("*").Lit(121),
-		jen.Id("size").Op("+=").Id("len").Call(jen.Id("b").Dot("Balances")).Op("*").Lit(8),
-		jen.For(jen.Id("ii").Op(":=").Lit(0),
-			jen.Id("ii").Op("<").Id("len").Call(jen.Id("b").Dot("PreviousEpochAttestations")),
-			jen.Id("ii").Op("++")).
-			Block(jen.Id("size").Op("+=").Lit(4),
-				jen.Id("size").Op("+=").Id("b").Dot("PreviousEpochAttestations").Index(jen.Id("ii")).Dot("SizeSSZ").Call()),
-		jen.For(jen.Id("ii").Op(":=").Lit(0),
-			jen.Id("ii").Op("<").Id("len").Call(jen.Id("b").Dot("CurrentEpochAttestations")),
-			jen.Id("ii").Op("++")).Block(jen.Id("size").Op("+=").Lit(4), jen.Id("size").Op("+=").Id("b").Dot("CurrentEpochAttestations").Index(jen.Id("ii")).Dot("SizeSSZ").Call()),
-		)
- */
+var generateUnmarshalSSZTmpl = `func ({{.Receiver}} {{.Type}}) UnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size {{ .SizeInequality }} {{ .FixedSize }} {
+		return ssz.ErrSize
+	}
+{{ .ValueUnmarshaling }}
+	return err
+}`
+
+func (g *generateContainer) GenerateUnmarshalSSZ() *generatedCode {
+	unmTmpl, err := template.New("GenerateUnmarshalSSZTmpl").Parse(generateUnmarshalSSZTmpl)
+	if err != nil {
+		panic(err)
+	}
+	sizeInequality := "!="
+	if g.IsVariableSized() {
+		sizeInequality = ">"
+	}
+	buf := bytes.NewBuffer(nil)
+	unmTmpl.Execute(buf, struct{
+		Receiver string
+		Type string
+		SizeInequality string
+		FixedSize int
+		ValueUnmarshaling string
+	}{
+		Receiver: receiverName,
+		Type: fmt.Sprintf("*%s", g.TypeName()),
+		SizeInequality: sizeInequality,
+		FixedSize: g.FixedSize(),
+		ValueUnmarshaling: "",
+	})
+	return &generatedCode{
+		blocks:  []string{string(buf.Bytes())},
+	}
+}
 
 var _ methodGenerator = &generateContainer{}
 var _ valueGenerator = &generateContainer{}
