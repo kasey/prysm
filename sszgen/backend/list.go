@@ -13,6 +13,11 @@ type generateList struct {
 	targetPackage string
 }
 
+
+func (g *generateList) generateUnmarshalValue(fieldName string, s string) string {
+	return ""
+}
+
 func (g *generateList) generateFixedMarshalValue(fieldName string) string {
 	tmpl := `dst = ssz.WriteOffset(dst, offset)
 offset += %s

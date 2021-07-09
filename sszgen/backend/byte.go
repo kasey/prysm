@@ -21,6 +21,10 @@ func (g *generateByte) generateFixedMarshalValue(fieldName string) string {
 	return ""
 }
 
+func (g *generateByte) generateUnmarshalValue(fieldName string, s string) string {
+	return ""
+}
+
 func (g *generateByte) variableSizeSSZ(fieldname string) string {
 	return ""
 }

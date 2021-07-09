@@ -115,10 +115,19 @@ type methodGenerator interface {
 type valueGenerator interface {
 	variableSizeSSZ(fieldname string) string
 	generateFixedMarshalValue(string) string
+	generateUnmarshalValue(string, string) string
+}
+
+type valueInitializer interface {
+	initializeValue(string) string
 }
 
 type variableMarshaller interface {
 	generateVariableMarshalValue(string) string
+}
+
+type variableUnmarshaller interface {
+	generateVariableUnmarshalValue(string) string
 }
 
 type coercer interface {
@@ -140,7 +149,7 @@ func newValueGenerator(vr types.ValRep, packagePath string) valueGenerator {
 	case *types.ValuePointer:
 		return &generatePointer{ty, packagePath}
 	case *types.ValueUint:
-		return &generateUint{ty, packagePath}
+		return &generateUint{valRep: ty, targetPackage: packagePath}
 	case *types.ValueUnion:
 		return &generateUnion{ty, packagePath}
 	case *types.ValueVector:
@@ -166,5 +175,21 @@ func importAlias(packageName string) string {
 		parts = parts[i:]
 		break
 	}
-	return strings.Join(parts, "_")
+	return strings.ReplaceAll(strings.Join(parts, "_"), "-", "_")
+}
+
+func fullyQualifiedTypeName(v types.ValRep, targetPackage string) string {
+	if targetPackage == v.PackagePath() {
+		return v.TypeName()
+	}
+	parts := strings.Split(v.PackagePath(), "/")
+	for i, p := range parts {
+		if strings.Contains(p, ".") {
+			continue
+		}
+		parts = parts[i:]
+		break
+	}
+	pkg := strings.ReplaceAll(strings.Join(parts, "_"), "-", "_")
+	return pkg + "." + v.TypeName()
 }

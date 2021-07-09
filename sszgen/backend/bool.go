@@ -20,6 +20,10 @@ func (g *generateBool) generateFixedMarshalValue(fieldName string) string {
 	return ""
 }
 
+func (g *generateBool) generateUnmarshalValue(fieldName string, s string) string {
+	return ""
+}
+
 func (g *generateBool) variableSizeSSZ(fieldname string) string {
 	return ""
 }

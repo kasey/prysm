@@ -41,9 +41,10 @@ func TestGenerateContainer_GenerateUnmarshalSSZ(t *testing.T) {
 	mg := newMethodGenerator(testFixBeaconState, "")
 	gc := mg.GenerateUnmarshalSSZ()
 	require.Equal(t, 0, len(gc.imports))
-	actual, err := format.Source([]byte(gc.blocks[0]))
+	actualBytes, err := format.Source([]byte(gc.blocks[0]))
+	actual := string(actualBytes)
 	require.NoError(t, err)
-	require.Equal(t, expected, string(actual))
+	require.Equal(t, expected, actual)
 }
 
 var testFixStatus types.ValRep = &types.ValueContainer{Name: "Status", Package: "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1", Contents: []types.ContainerField{{Key: "ForkDigest", Value: &types.ValueVector{Size: 4, ElementValue: &types.ValueByte{Name: "byte"}}}, {Key: "FinalizedRoot", Value: &types.ValueVector{Size: 32, ElementValue: &types.ValueByte{Name: "byte"}}}, {Key: "FinalizedEpoch", Value: &types.ValueOverlay{Name: "Epoch", Package: "github.com/prysmaticlabs/eth2-types", Underlying: &types.ValueUint{Name: "uint64", Size: 64}}}, {Key: "HeadRoot", Value: &types.ValueVector{Size: 32, ElementValue: &types.ValueByte{Name: "byte"}}}, {Key: "HeadSlot", Value: &types.ValueOverlay{Name: "Slot", Package: "github.com/prysmaticlabs/eth2-types", Underlying: &types.ValueUint{Name: "uint64", Size: 64}}}}}

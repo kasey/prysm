@@ -23,6 +23,10 @@ if dst, err = {{.FieldName}}.MarshalSSZTo(dst); err != nil {
 	return nil, err
 }`
 
+func (g *generateContainer) generateUnmarshalValue(fieldName string, s string) string {
+	return ""
+}
+
 func (g *generateContainer) generateFixedMarshalValue(fieldName string) string {
 	tmpl, err := template.New("generateMarshalValueContainerTmpl").Parse(generateMarshalValueContainerTmpl)
 	if err != nil {
@@ -158,18 +162,87 @@ var generateUnmarshalSSZTmpl = `func ({{.Receiver}} {{.Type}}) UnmarshalSSZ(buf 
 	if size {{ .SizeInequality }} {{ .FixedSize }} {
 		return ssz.ErrSize
 	}
+
+	{{ .SliceDeclaration }}
+	{{ .VariableOffsetDeclarations }}
+	{{ .VariableOffsetValidation }}
+	{{ .VariableSliceDeclarations }}
 {{ .ValueUnmarshaling }}
 	return err
 }`
 
 func (g *generateContainer) GenerateUnmarshalSSZ() *generatedCode {
+	sizeInequality := "!="
+	if g.IsVariableSized() {
+		sizeInequality = "<"
+	}
+	//unmarshalVariableBlocks := make([]string, 0)
+	offsets := make([]string, len(g.Contents))
+	validations := make([]string, 0)
+	unmarshalBlocks := make([]string, 0)
+	begin := 0
+	end := 0
+	slices := make([]string, 0)
+	variableOffsets := make([]int, 0)
+	for i, c := range g.Contents {
+		begin = end
+		end += c.Value.FixedSize()
+		sliceName := fmt.Sprintf("s%d", i)
+		if c.Value.IsVariableSized() {
+			offsets = append(offsets, fmt.Sprintf("v%d = ssz.ReadOffset(buf[%d:%d])", i, begin, end))
+			validations = append(validations, fmt.Sprintf("if v%d > size {\n\treturn ssz.ErrOffset\n}", i))
+			variableOffsets = append(variableOffsets, i)
+		} else {
+			slices = append(slices, fmt.Sprintf("%s := buf[%d:%d]", sliceName, begin, end))
+		}
+
+		unmarshalBlocks = append(unmarshalBlocks, fmt.Sprintf("\n\t// Field %d: %s", i, c.Key))
+		mg := newValueGenerator(c.Value, g.targetPackage)
+		fieldName := fmt.Sprintf("%s.%s", receiverName, c.Key)
+
+		vi, ok := mg.(valueInitializer)
+		if ok {
+			ini := vi.initializeValue(fieldName)
+			if ini != "" {
+				unmarshalBlocks = append(unmarshalBlocks, fmt.Sprintf("%s = %s", fieldName, ini))
+			}
+		}
+
+		mv := mg.generateUnmarshalValue(fieldName, sliceName)
+		if mv != "" {
+			//unmarshalBlocks = append(unmarshalBlocks, fmt.Sprintf("\t%s = %s", fieldName, mv))
+			unmarshalBlocks = append(unmarshalBlocks, mv)
+		}
+
+		/*
+				if !c.Value.IsVariableSized() {
+					continue
+				}
+		_, ok := mg.(variableUnmarshaller)
+		if !ok {
+			continue
+		}
+		vm := mg.(variableUnmarshaller)
+		vmc := vm.generateVariableUnmarshalValue(fieldName)
+		if vmc != "" {
+			unmarshalVariableBlocks = append(unmarshalVariableBlocks, fmt.Sprintf("\n\t// Field %d: %s", i, c.Key))
+			unmarshalVariableBlocks = append(unmarshalVariableBlocks, "\t" + vmc)
+		}
+		 */
+	}
+
+	variableSlices := make([]string, 0)
+	for i := 0; i < len(variableOffsets); i++ {
+		current := fmt.Sprintf("v%d", variableOffsets[i])
+		next := ""
+		if i + 1 < len(variableOffsets) {
+			next = fmt.Sprintf("v%d", variableOffsets[i+1])
+		}
+		variableSlices = append(variableSlices , fmt.Sprintf("s%d := buf[%s:%s]", variableOffsets[i], current, next))
+	}
 	unmTmpl, err := template.New("GenerateUnmarshalSSZTmpl").Parse(generateUnmarshalSSZTmpl)
 	if err != nil {
 		panic(err)
-	}
-	sizeInequality := "!="
-	if g.IsVariableSized() {
-		sizeInequality = ">"
 	}
 	buf := bytes.NewBuffer(nil)
 	unmTmpl.Execute(buf, struct{
@@ -177,18 +250,35 @@ func (g *generateContainer) GenerateUnmarshalSSZ() *generatedCode {
 		Type string
 		SizeInequality string
 		FixedSize int
+		SliceDeclaration string
+		VariableOffsetDeclarations string
+		VariableOffsetValidation string
+		VariableSliceDeclarations string
 		ValueUnmarshaling string
 	}{
 		Receiver: receiverName,
 		Type: fmt.Sprintf("*%s", g.TypeName()),
 		SizeInequality: sizeInequality,
 		FixedSize: g.FixedSize(),
-		ValueUnmarshaling: "",
+		SliceDeclaration: strings.Join(slices, "\n"),
+		VariableOffsetDeclarations: strings.Join(offsets, "\n"),
+		VariableOffsetValidation: strings.Join(validations, "\n"),
+		VariableSliceDeclarations: strings.Join(variableSlices, "\n"),
+		ValueUnmarshaling: strings.Join(unmarshalBlocks, "\n"),
 	})
 	return &generatedCode{
 		blocks:  []string{string(buf.Bytes())},
 	}
 }
 
+func (g *generateContainer) initializeValue(fieldName string) string {
+	fqType := g.TypeName()
+	if g.targetPackage != g.PackagePath() {
+		fqType = importAlias(g.PackagePath()) + "." + fqType
+	}
+	return fmt.Sprintf("new(%s)", fullyQualifiedTypeName(g.ValueContainer, g.targetPackage))
+}
+
 var _ methodGenerator = &generateContainer{}
 var _ valueGenerator = &generateContainer{}
+var _ valueInitializer = &generateContainer{}

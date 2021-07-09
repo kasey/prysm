@@ -13,21 +13,58 @@ type generateVector struct {
 	targetPackage string
 }
 
+func (g *generateVector) generateUnmarshalValue(fieldName string, sliceName string) string {
+	gg := newValueGenerator(g.ElementValue, g.targetPackage)
+	switch g.ElementValue.(type) {
+	case *types.ValueByte:
+		return fmt.Sprintf("%s = append([]byte{}, %s...)", fieldName, sliceName)
+	default:
+		loopVar := "i"
+		if fieldName[0:1] == "i" && monoCharacter(fieldName) {
+			loopVar = fieldName + "i"
+		}
+		t := `{
+	var tmp {{ .TypeName }}
+	for {{ .LoopVar }} := 0; {{ .LoopVar }} < {{ .FixedSize }}; {{ .LoopVar }} ++ {
+		tmpSlice := {{ .SliceName }}[{{ .LoopVar }}*{{ .NestedFixedSize }}:(1+{{ .LoopVar }})*{{ .NestedFixedSize }}]
+{{ .NestedUnmarshal }}
+		{{ .FieldName }} = append({{ .FieldName }}, tmp)
+	}
+}`
+		tmpl, err := template.New("tmplgenerateUnmarshalValueDefault").Parse(t)
+		if err != nil {
+			panic(err)
+		}
+		buf := bytes.NewBuffer(nil)
+		vr := types.ValRep(g.ValueVector)
+		err = tmpl.Execute(buf, struct{
+			TypeName string
+			SliceName string
+			FixedSize int
+			NestedFixedSize int
+			LoopVar string
+			NestedUnmarshal string
+			FieldName string
+		}{
+			TypeName: fullyQualifiedTypeName(vr, g.targetPackage),
+			SliceName: sliceName,
+			FixedSize: g.FixedSize(),
+			NestedFixedSize: g.ElementValue.FixedSize(),
+			LoopVar: loopVar,
+			NestedUnmarshal: gg.generateUnmarshalValue("tmp", "tmpSlice"),
+			FieldName: fieldName,
+		})
+		if err != nil {
+			panic(err)
+		}
+		return string(buf.Bytes())
+	}
+}
+
 var tmplGenerateMarshalValueVector = `if len({{.FieldName}}) != {{.Size}} {
 	return nil, ssz.ErrBytesLength
 }
 {{.MarshalValue}}`
-
-func monoCharacter(s string) bool {
-	ch := s[0]
-	for i := 1; i < len(s); i++ {
-		if s[i] == ch {
-			continue
-		}
-		return false
-	}
-	return true
-}
 
 func (g *generateVector) generateFixedMarshalValue(fieldName string) string {
 	mvTmpl, err := template.New("tmplGenerateMarshalValueVector").Parse(tmplGenerateMarshalValueVector)
@@ -64,6 +101,17 @@ func (g *generateVector) generateFixedMarshalValue(fieldName string) string {
 		panic(err)
 	}
 	return string(buf.Bytes())
+}
+
+func monoCharacter(s string) bool {
+	ch := s[0]
+	for i := 1; i < len(s); i++ {
+		if s[i] == ch {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 func (g *generateVector) variableSizeSSZ(fieldName string) string {

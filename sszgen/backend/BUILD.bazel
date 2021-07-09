@@ -26,6 +26,7 @@ go_test(
         "container_test.go",
         "render_test.go",
     ],
+    data = glob(["testdata/**"]),
     embed = [":go_default_library"],
     deps = [
         "//shared/testutil/require:go_default_library",
