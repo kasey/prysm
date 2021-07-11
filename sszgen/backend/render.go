@@ -179,8 +179,9 @@ func importAlias(packageName string) string {
 }
 
 func fullyQualifiedTypeName(v types.ValRep, targetPackage string) string {
+	tn := v.TypeName()
 	if targetPackage == v.PackagePath() {
-		return v.TypeName()
+		return tn
 	}
 	parts := strings.Split(v.PackagePath(), "/")
 	for i, p := range parts {
@@ -191,5 +192,9 @@ func fullyQualifiedTypeName(v types.ValRep, targetPackage string) string {
 		break
 	}
 	pkg := strings.ReplaceAll(strings.Join(parts, "_"), "-", "_")
-	return pkg + "." + v.TypeName()
+	if tn[0:1] == "*" {
+		tn = tn[1:]
+		pkg = "*" + pkg
+	}
+	return pkg + "." + tn
 }

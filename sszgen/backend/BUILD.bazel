@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "bool.go",
         "byte.go",
+        "caster.go",
         "container.go",
         "list.go",
         "overlay.go",

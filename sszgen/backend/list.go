@@ -13,9 +13,67 @@ type generateList struct {
 	targetPackage string
 }
 
+var generateListGenerateUnmarshalValueTmpl = `{
+	if len({{.SliceName}}) % {{.ElementSize}} != 0 {
+		return fmt.Errorf("misaligned bytes: %s length is %d, which is not a multiple of %d", "{{.FieldName}}", len({{.SliceName}}), {{.ElementSize}})
+	}
+	numElem := len({{.SliceName}}) / {{.ElementSize}}
+	if numElem > {{ .MaxSize }} {
+		return fmt.Errorf("ssz-max exceeded: %s has %d elements, ssz-max is %d", "{{.FieldName}}", numElem, {{.MaxSize}})
+	}
+	for {{.LoopVar}} := 0; {{.LoopVar}} < numElem; {{.LoopVar}}++ {
+		var tmp {{.TypeName}}
+		{{.Initializer}}
+		tmpSlice := {{.SliceName}}[{{.LoopVar}}*{{.NestedFixedSize}}:(1+{{.LoopVar}})*{{.NestedFixedSize}}]
+{{.NestedUnmarshal}}
+		{{.FieldName}} = append({{.FieldName}}, tmp)
+	}
+}`
 
-func (g *generateList) generateUnmarshalValue(fieldName string, s string) string {
-	return ""
+func (g *generateList) generateUnmarshalValue(fieldName string, sliceName string) string {
+	loopVar := "i"
+	if fieldName[0:1] == "i" && monoCharacter(fieldName) {
+		loopVar = fieldName + "i"
+	}
+	gg := newValueGenerator(g.ElementValue, g.targetPackage)
+	vi, ok := gg.(valueInitializer)
+	var initializer string
+	if ok {
+		initializer = vi.initializeValue("tmp")
+		if initializer != "" {
+			initializer = "tmp = " + initializer
+		}
+	}
+	tmpl, err := template.New("generateListGenerateUnmarshalValueTmpl").Parse(generateListGenerateUnmarshalValueTmpl)
+	if err != nil {
+		panic(err)
+	}
+	buf := bytes.NewBuffer(nil)
+	err = tmpl.Execute(buf, struct{
+		SliceName string
+		ElementSize int
+		FieldName string
+		MaxSize int
+		TypeName string
+		LoopVar string
+		Initializer string
+		NestedFixedSize int
+		NestedUnmarshal string
+	}{
+		SliceName: sliceName,
+		ElementSize: g.ElementValue.FixedSize(),
+		FieldName: fieldName,
+		MaxSize: g.MaxSize,
+		TypeName: fullyQualifiedTypeName(g.ElementValue, g.targetPackage),
+		LoopVar: loopVar,
+		Initializer: initializer,
+		NestedFixedSize: g.ElementValue.FixedSize(),
+		NestedUnmarshal: gg.generateUnmarshalValue("tmp", "tmpSlice"),
+	})
+	if err != nil {
+		panic(err)
+	}
+	return string(buf.Bytes())
 }
 
 func (g *generateList) generateFixedMarshalValue(fieldName string) string {

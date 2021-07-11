@@ -36,7 +36,7 @@ func (g *generateVector) generateUnmarshalValue(fieldName string, sliceName stri
 			panic(err)
 		}
 		buf := bytes.NewBuffer(nil)
-		vr := types.ValRep(g.ValueVector)
+		nvr := types.ValRep(g.ElementValue)
 		err = tmpl.Execute(buf, struct{
 			TypeName string
 			SliceName string
@@ -46,7 +46,7 @@ func (g *generateVector) generateUnmarshalValue(fieldName string, sliceName stri
 			NestedUnmarshal string
 			FieldName string
 		}{
-			TypeName: fullyQualifiedTypeName(vr, g.targetPackage),
+			TypeName: fullyQualifiedTypeName(nvr, g.targetPackage),
 			SliceName: sliceName,
 			FixedSize: g.FixedSize(),
 			NestedFixedSize: g.ElementValue.FixedSize(),

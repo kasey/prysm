@@ -23,8 +23,11 @@ if dst, err = {{.FieldName}}.MarshalSSZTo(dst); err != nil {
 	return nil, err
 }`
 
-func (g *generateContainer) generateUnmarshalValue(fieldName string, s string) string {
-	return ""
+func (g *generateContainer) generateUnmarshalValue(fieldName string, sliceName string) string {
+	t := `if err = %s.UnmarshalSSZ(%s); err != nil {
+		return err
+	}`
+	return fmt.Sprintf(t, fieldName, sliceName)
 }
 
 func (g *generateContainer) generateFixedMarshalValue(fieldName string) string {
@@ -190,7 +193,13 @@ func (g *generateContainer) GenerateUnmarshalSSZ() *generatedCode {
 		sliceName := fmt.Sprintf("s%d", i)
 		if c.Value.IsVariableSized() {
 			offsets = append(offsets, fmt.Sprintf("v%d = ssz.ReadOffset(buf[%d:%d])", i, begin, end))
-			validations = append(validations, fmt.Sprintf("if v%d > size {\n\treturn ssz.ErrOffset\n}", i))
+			var prevBoundCheck string
+			if len(variableOffsets) == 0 {
+				validations = append(validations, fmt.Sprintf("if v%d < %d {\n\treturn ssz.ErrInvalidVariableOffset\n}", i, g.FixedSize()))
+			} else {
+				prevBoundCheck = fmt.Sprintf("|| v%d > v%d", variableOffsets[len(variableOffsets)-1], i)
+			}
+			validations = append(validations, fmt.Sprintf("if v%d > size %s{\n\treturn ssz.ErrOffset\n}", i, prevBoundCheck))
 			variableOffsets = append(variableOffsets, i)
 		} else {
 			slices = append(slices, fmt.Sprintf("%s := buf[%d:%d]", sliceName, begin, end))

@@ -16,9 +16,9 @@ func (g *generatePointer) generateFixedMarshalValue(fieldName string) string {
 	return gg.generateFixedMarshalValue(fieldName)
 }
 
-func (g *generatePointer) generateUnmarshalValue(fieldName string, s string) string {
+func (g *generatePointer) generateUnmarshalValue(fieldName string, sliceName string) string {
 	gg := newValueGenerator(g.Referent, g.targetPackage)
-	return gg.generateUnmarshalValue(fieldName, "")
+	return gg.generateUnmarshalValue(fieldName, sliceName)
 }
 
 func (g *generatePointer) initializeValue(fieldName string) string {
