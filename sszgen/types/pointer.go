@@ -9,7 +9,7 @@ func (vp *ValuePointer) TypeName() string {
 }
 
 func (vp *ValuePointer) PackagePath() string {
-	return "*" + vp.Referent.PackagePath()
+	return vp.Referent.PackagePath()
 }
 
 func (vp *ValuePointer) FixedSize() int {

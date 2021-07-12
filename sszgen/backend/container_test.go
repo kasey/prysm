@@ -16,7 +16,7 @@ func TestGenerateContainer_GenerateSizeSSZ(t *testing.T) {
 
 	mg := newMethodGenerator(testFixBeaconState, "")
 	gc := mg.GenerateSizeSSZ()
-	require.Equal(t, 0, len(gc.imports))
+	require.Equal(t, 4, len(gc.imports))
 	require.Equal(t, expected, gc.blocks[0])
 }
 
@@ -27,7 +27,7 @@ func TestGenerateContainer_GenerateMarshalSSZ(t *testing.T) {
 
 	mg := newMethodGenerator(testFixBeaconState, "")
 	gc := mg.GenerateMarshalSSZ()
-	require.Equal(t, 0, len(gc.imports))
+	require.Equal(t, 4, len(gc.imports))
 	actual, err := format.Source([]byte(gc.blocks[0]))
 	require.NoError(t, err)
 	require.Equal(t, expected, string(actual))
@@ -40,7 +40,7 @@ func TestGenerateContainer_GenerateUnmarshalSSZ(t *testing.T) {
 
 	mg := newMethodGenerator(testFixBeaconState, "")
 	gc := mg.GenerateUnmarshalSSZ()
-	require.Equal(t, 0, len(gc.imports))
+	require.Equal(t, 4, len(gc.imports))
 	actualBytes, err := format.Source([]byte(gc.blocks[0]))
 	actual := string(actualBytes)
 	require.NoError(t, err)

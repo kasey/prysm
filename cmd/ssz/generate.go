@@ -33,8 +33,10 @@ var generate = &cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) error {
-		if c.NArg() > 0 {
-			sourcePackage = c.Args().Get(0)
+		sourcePackage = c.Args().Get(0)
+		if sourcePackage == "" {
+			cli.ShowCommandHelp(c, "generate")
+			return fmt.Errorf("error: mising required <input package> argument")
 		}
 		index := sszgen.NewPackageIndex()
 		rep := sszgen.NewRepresenter(index)
@@ -66,6 +68,7 @@ var generate = &cli.Command{
 
 		g := backend.NewGenerator(sourcePackage)
 		for _, s := range specs {
+			fmt.Printf("Generating methods for %s/%s\n", s.Package, s.Name)
 			typeRep, err := rep.GetDeclaration(s.Package, s.Name)
 			if err != nil {
 				return err

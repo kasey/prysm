@@ -10,7 +10,7 @@ func (vl *ValueList) TypeName() string {
 }
 
 func (vl *ValueList) PackagePath() string {
-	return "[]" + vl.ElementValue.PackagePath()
+	return vl.ElementValue.PackagePath()
 }
 
 func (vl *ValueList) FixedSize() int {

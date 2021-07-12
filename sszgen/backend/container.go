@@ -97,6 +97,7 @@ func (g *generateContainer) GenerateSizeSSZ() *generatedCode {
 	})
 	return &generatedCode{
 		blocks:  []string{string(buf.Bytes())},
+		imports: extractImportsFromContainerFields(g.Contents),
 	}
 }
 
@@ -156,6 +157,7 @@ func (g *generateContainer) GenerateMarshalSSZ() *generatedCode {
 	})
 	return &generatedCode{
 		blocks:  []string{string(buf.Bytes())},
+		imports: extractImportsFromContainerFields(g.Contents),
 	}
 }
 
@@ -277,6 +279,7 @@ func (g *generateContainer) GenerateUnmarshalSSZ() *generatedCode {
 	})
 	return &generatedCode{
 		blocks:  []string{string(buf.Bytes())},
+		imports: extractImportsFromContainerFields(g.Contents),
 	}
 }
 

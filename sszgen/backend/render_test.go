@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/prysmaticlabs/prysm/shared/testutil/require"
+	"github.com/prysmaticlabs/prysm/sszgen/types"
 )
 
 var generator_generateFixture = `package derp
@@ -66,7 +67,7 @@ func (c *BeaconState) SizeSSZ() (size int) {
 `
 
 func TestGenerator_GenerateBeaconState(t *testing.T) {
-	g := &Generator{packageName: "github.com/prysmaticlabs/derp"}
+	g := &Generator{packageName: "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"}
 	g.Generate(testFixBeaconState)
 	rendered, err := g.Render()
 	require.NoError(t, err)
@@ -94,4 +95,14 @@ func TestImportAlias(t *testing.T) {
 	for _, c := range cases {
 		require.Equal(t, importAlias(c.packageName), c.alias)
 	}
+}
+
+func TestExtractImportsFromContainerFields(t *testing.T) {
+	vc := testFixBeaconState.(*types.ValueContainer)
+	imports := extractImportsFromContainerFields(vc.Contents)
+	require.Equal(t, 4, len(imports))
+	require.Equal(t, "prysmaticlabs_eth2_types", imports["github.com/prysmaticlabs/eth2-types"])
+	require.Equal(t, "prysmaticlabs_prysm_proto_beacon_p2p_v1", imports["github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"])
+	require.Equal(t, "prysmaticlabs_prysm_proto_eth_v1alpha1", imports["github.com/prysmaticlabs/prysm/proto/eth/v1alpha1"])
+	require.Equal(t, "prysmaticlabs_go_bitfield", imports["github.com/prysmaticlabs/go-bitfield"])
 }

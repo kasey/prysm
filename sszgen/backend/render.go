@@ -50,6 +50,10 @@ type Generator struct {
 	packageName string
 }
 
+func NewGenerator(packageName string) *Generator {
+	return &Generator{packageName: packageName}
+}
+
 func (g *Generator) Generate(vr types.ValRep) {
 	mg := newMethodGenerator(vr, g.packageName)
 	sizeSSZ := mg.GenerateSizeSSZ()
@@ -180,7 +184,7 @@ func importAlias(packageName string) string {
 
 func fullyQualifiedTypeName(v types.ValRep, targetPackage string) string {
 	tn := v.TypeName()
-	if targetPackage == v.PackagePath() {
+	if targetPackage == v.PackagePath() || v.PackagePath() == "" {
 		return tn
 	}
 	parts := strings.Split(v.PackagePath(), "/")
@@ -197,4 +201,16 @@ func fullyQualifiedTypeName(v types.ValRep, targetPackage string) string {
 		pkg = "*" + pkg
 	}
 	return pkg + "." + tn
+}
+
+func extractImportsFromContainerFields(cfs []types.ContainerField) map[string]string {
+	imports := make(map[string]string)
+	for _, cf := range cfs {
+		pkg := cf.Value.PackagePath()
+		if pkg == "" {
+			continue
+		}
+		imports[pkg] = importAlias(pkg)
+	}
+	return imports
 }
