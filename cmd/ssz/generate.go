@@ -58,7 +58,7 @@ var generate = &cli.Command{
 		}
 
 		if output == "" {
-			output = "generated.ssz.go"
+			output = "methodical.ssz.go"
 		}
 		outFh, err := os.Create(output)
 		defer outFh.Close()

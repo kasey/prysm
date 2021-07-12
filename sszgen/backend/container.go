@@ -59,7 +59,7 @@ func (g *generateContainer) variableSizeSSZ(fieldName string) string {
 }
 
 
-var sizeBodyTmpl = `func ({{.Receiver}} {{.Type}}) SizeSSZ() (size int) {
+var sizeBodyTmpl = `func ({{.Receiver}} {{.Type}}) XXSizeSSZ() (size int) {
 	size := {{.FixedSize}}
 	{{- .VariableSize }}
 	return size
@@ -101,11 +101,11 @@ func (g *generateContainer) GenerateSizeSSZ() *generatedCode {
 	}
 }
 
-var marshalBodyTmpl = `func ({{.Receiver}} {{.Type}}) MarshalSSZ() ([]byte, error) {
+var marshalBodyTmpl = `func ({{.Receiver}} {{.Type}}) XXMarshalSSZ() ([]byte, error) {
 	return ssz.MarshalSSZ(b)
 }
 
-func ({{.Receiver}} {{.Type}}) MarshalSSZTo(dst []byte) ([]byte, error) {
+func ({{.Receiver}} {{.Type}}) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	offset := {{.FixedSize -}}
 {{- .ValueMarshaling }}
 {{- .VariableValueMarshaling }}
@@ -161,7 +161,7 @@ func (g *generateContainer) GenerateMarshalSSZ() *generatedCode {
 	}
 }
 
-var generateUnmarshalSSZTmpl = `func ({{.Receiver}} {{.Type}}) UnmarshalSSZ(buf []byte) error {
+var generateUnmarshalSSZTmpl = `func ({{.Receiver}} {{.Type}}) XXUnmarshalSSZ(buf []byte) error {
 	var err error
 	size := uint64(len(buf))
 	if size {{ .SizeInequality }} {{ .FixedSize }} {
