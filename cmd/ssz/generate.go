@@ -38,10 +38,14 @@ var generate = &cli.Command{
 			cli.ShowCommandHelp(c, "generate")
 			return fmt.Errorf("error: mising required <input package> argument")
 		}
+		var err error
 		index := sszgen.NewPackageIndex()
+		packageName, err := index.GetPackageName(sourcePackage)
+		if err != nil {
+			return err
+		}
 		rep := sszgen.NewRepresenter(index)
 
-		var err error
 		var specs []*sszgen.DeclarationRef
 		if len(typeNames) > 0 {
 			for _, n := range strings.Split(strings.TrimSpace(typeNames), ",") {
@@ -66,7 +70,7 @@ var generate = &cli.Command{
 			return err
 		}
 
-		g := backend.NewGenerator(sourcePackage)
+		g := backend.NewGenerator(packageName, sourcePackage)
 		for _, s := range specs {
 			fmt.Printf("Generating methods for %s/%s\n", s.Package, s.Name)
 			typeRep, err := rep.GetDeclaration(s.Package, s.Name)

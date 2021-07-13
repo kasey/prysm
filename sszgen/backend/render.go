@@ -46,16 +46,20 @@ func (gc *generatedCode) merge(right *generatedCode) {
 // Generator needs to be initialized with the package name,
 // so use the new NewGenerator func for proper setup.
 type Generator struct {
-	gc []*generatedCode
+	gc          []*generatedCode
 	packageName string
+	packagePath string
 }
 
-func NewGenerator(packageName string) *Generator {
-	return &Generator{packageName: packageName}
+func NewGenerator(packageName, packagePath string) *Generator {
+	return &Generator{
+		packageName: packageName,
+		packagePath: packagePath,
+	}
 }
 
 func (g *Generator) Generate(vr types.ValRep) {
-	mg := newMethodGenerator(vr, g.packageName)
+	mg := newMethodGenerator(vr, g.packagePath)
 	sizeSSZ := mg.GenerateSizeSSZ()
 	if sizeSSZ != nil {
 		g.gc = append(g.gc, sizeSSZ)
@@ -89,20 +93,19 @@ func (g *Generator) Render() ([]byte, error) {
 	final := &generatedCode{
 		imports: map[string]string{
 			"github.com/ferranbt/fastssz": "ssz",
+			"fmt": "",
 		},
 	}
 	for _, gc := range g.gc {
 		final.merge(gc)
 	}
-	pparts := strings.Split(g.packageName, "/")
-	p := pparts[len(pparts)-1]
 	buf := bytes.NewBuffer(nil)
 	tmpl.Execute(buf, struct {
 		Package string
 		Imports string
 		Blocks  string
 	}{
-		Package: p,
+		Package: g.packageName,
 		Imports: final.renderImportPairs(),
 		Blocks: final.renderBlocks(),
 	})
@@ -203,11 +206,11 @@ func fullyQualifiedTypeName(v types.ValRep, targetPackage string) string {
 	return pkg + "." + tn
 }
 
-func extractImportsFromContainerFields(cfs []types.ContainerField) map[string]string {
+func extractImportsFromContainerFields(cfs []types.ContainerField, targetPackage string) map[string]string {
 	imports := make(map[string]string)
 	for _, cf := range cfs {
 		pkg := cf.Value.PackagePath()
-		if pkg == "" {
+		if pkg == "" || pkg == targetPackage {
 			continue
 		}
 		imports[pkg] = importAlias(pkg)

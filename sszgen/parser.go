@@ -67,6 +67,7 @@ type PackageParser interface {
 	AllParseNodes() []*ParseNode
 	GetType(name string) (*ParseNode, error)
 	Path() string // parser's package path
+	PackageName() (string, error) // "real" name ie `package $NAME` declaration in source files in package
 }
 
 type packageParser struct {
@@ -106,6 +107,13 @@ func (pp *packageParser) AllParseNodes() []*ParseNode {
 		}
 	}
 	return structs
+}
+
+func (pp *packageParser) PackageName() (string, error) {
+	for _, f := range pp.files {
+		return f.Name.Name, nil
+	}
+	return "", fmt.Errorf("Could not determine package name for package path %s", pp.packagePath)
 }
 
 func (pp *packageParser) GetType(name string) (*ParseNode, error) {

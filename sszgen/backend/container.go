@@ -59,7 +59,7 @@ func (g *generateContainer) variableSizeSSZ(fieldName string) string {
 }
 
 
-var sizeBodyTmpl = `func ({{.Receiver}} {{.Type}}) XXSizeSSZ() (size int) {
+var sizeBodyTmpl = `func ({{.Receiver}} {{.Type}}) XXSizeSSZ() (int) {
 	size := {{.FixedSize}}
 	{{- .VariableSize }}
 	return size
@@ -97,15 +97,16 @@ func (g *generateContainer) GenerateSizeSSZ() *generatedCode {
 	})
 	return &generatedCode{
 		blocks:  []string{string(buf.Bytes())},
-		imports: extractImportsFromContainerFields(g.Contents),
+		imports: extractImportsFromContainerFields(g.Contents, g.targetPackage),
 	}
 }
 
 var marshalBodyTmpl = `func ({{.Receiver}} {{.Type}}) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(b)
+	return ssz.MarshalSSZ({{.Receiver}})
 }
 
 func ({{.Receiver}} {{.Type}}) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
 	offset := {{.FixedSize -}}
 {{- .ValueMarshaling }}
 {{- .VariableValueMarshaling }}
@@ -157,7 +158,7 @@ func (g *generateContainer) GenerateMarshalSSZ() *generatedCode {
 	})
 	return &generatedCode{
 		blocks:  []string{string(buf.Bytes())},
-		imports: extractImportsFromContainerFields(g.Contents),
+		imports: extractImportsFromContainerFields(g.Contents, g.targetPackage),
 	}
 }
 
@@ -194,7 +195,7 @@ func (g *generateContainer) GenerateUnmarshalSSZ() *generatedCode {
 		end += c.Value.FixedSize()
 		sliceName := fmt.Sprintf("s%d", i)
 		if c.Value.IsVariableSized() {
-			offsets = append(offsets, fmt.Sprintf("v%d = ssz.ReadOffset(buf[%d:%d])", i, begin, end))
+			offsets = append(offsets, fmt.Sprintf("v%d := ssz.ReadOffset(buf[%d:%d])", i, begin, end))
 			var prevBoundCheck string
 			if len(variableOffsets) == 0 {
 				validations = append(validations, fmt.Sprintf("if v%d < %d {\n\treturn ssz.ErrInvalidVariableOffset\n}", i, g.FixedSize()))
@@ -279,7 +280,7 @@ func (g *generateContainer) GenerateUnmarshalSSZ() *generatedCode {
 	})
 	return &generatedCode{
 		blocks:  []string{string(buf.Bytes())},
-		imports: extractImportsFromContainerFields(g.Contents),
+		imports: extractImportsFromContainerFields(g.Contents, g.targetPackage),
 	}
 }
 
