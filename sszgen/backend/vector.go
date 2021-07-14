@@ -9,15 +9,16 @@ import (
 )
 
 type generateVector struct {
-	*types.ValueVector
+	valRep *types.ValueVector
 	targetPackage string
+	casterConfig
 }
 
 func (g *generateVector) generateUnmarshalValue(fieldName string, sliceName string) string {
-	gg := newValueGenerator(g.ElementValue, g.targetPackage)
-	switch g.ElementValue.(type) {
+	gg := newValueGenerator(g.valRep.ElementValue, g.targetPackage)
+	switch g.valRep.ElementValue.(type) {
 	case *types.ValueByte:
-		return fmt.Sprintf("%s = append([]byte{}, %s...)", fieldName, sliceName)
+		return fmt.Sprintf("%s = append([]byte{}, %s...)", fieldName, g.casterConfig.toOverlay(sliceName))
 	default:
 		loopVar := "i"
 		if fieldName[0:1] == "i" && monoCharacter(fieldName) {
@@ -25,7 +26,7 @@ func (g *generateVector) generateUnmarshalValue(fieldName string, sliceName stri
 		}
 		t := `{
 	var tmp {{ .TypeName }}
-	for {{ .LoopVar }} := 0; {{ .LoopVar }} < {{ .FixedSize }}; {{ .LoopVar }} ++ {
+	for {{ .LoopVar }} := 0; {{ .LoopVar }} < {{ .NumElements }}; {{ .LoopVar }} ++ {
 		tmpSlice := {{ .SliceName }}[{{ .LoopVar }}*{{ .NestedFixedSize }}:(1+{{ .LoopVar }})*{{ .NestedFixedSize }}]
 {{ .NestedUnmarshal }}
 		{{ .FieldName }} = append({{ .FieldName }}, tmp)
@@ -36,11 +37,11 @@ func (g *generateVector) generateUnmarshalValue(fieldName string, sliceName stri
 			panic(err)
 		}
 		buf := bytes.NewBuffer(nil)
-		nvr := types.ValRep(g.ElementValue)
+		nvr := types.ValRep(g.valRep.ElementValue)
 		err = tmpl.Execute(buf, struct{
 			TypeName string
 			SliceName string
-			FixedSize int
+			NumElements int
 			NestedFixedSize int
 			LoopVar string
 			NestedUnmarshal string
@@ -48,8 +49,8 @@ func (g *generateVector) generateUnmarshalValue(fieldName string, sliceName stri
 		}{
 			TypeName: fullyQualifiedTypeName(nvr, g.targetPackage),
 			SliceName: sliceName,
-			FixedSize: g.FixedSize(),
-			NestedFixedSize: g.ElementValue.FixedSize(),
+			NumElements: g.valRep.FixedSize() / g.valRep.ElementValue.FixedSize(),
+			NestedFixedSize: g.valRep.ElementValue.FixedSize(),
 			LoopVar: loopVar,
 			NestedUnmarshal: gg.generateUnmarshalValue("tmp", "tmpSlice"),
 			FieldName: fieldName,
@@ -72,7 +73,7 @@ func (g *generateVector) generateFixedMarshalValue(fieldName string) string {
 		panic(err)
 	}
 	var marshalValue string
-	switch g.ElementValue.(type) {
+	switch g.valRep.ElementValue.(type) {
 	case *types.ValueByte:
 		marshalValue = fmt.Sprintf("dst = append(dst, %s...)", fieldName)
 	default:
@@ -83,7 +84,7 @@ func (g *generateVector) generateFixedMarshalValue(fieldName string) string {
 		t := `for _, %s := range %s {
 	%s
 }`
-		gg := newValueGenerator(g.ElementValue, g.targetPackage)
+		gg := newValueGenerator(g.valRep.ElementValue, g.targetPackage)
 		internal := gg.generateFixedMarshalValue(nestedFieldName)
 		marshalValue = fmt.Sprintf(t, nestedFieldName, fieldName, internal)
 	}
@@ -94,7 +95,7 @@ func (g *generateVector) generateFixedMarshalValue(fieldName string) string {
 		MarshalValue string
 	}{
 		FieldName: fieldName,
-		Size: g.Size,
+		Size: g.valRep.Size,
 		MarshalValue: marshalValue,
 	})
 	if err != nil {
@@ -115,10 +116,16 @@ func monoCharacter(s string) bool {
 }
 
 func (g *generateVector) variableSizeSSZ(fieldName string) string {
-	if !g.ElementValue.IsVariableSized() {
-		return fmt.Sprintf("len(%s) * %d", fieldName, g.ElementValue.FixedSize())
+	if !g.valRep.ElementValue.IsVariableSized() {
+		return fmt.Sprintf("len(%s) * %d", fieldName, g.valRep.ElementValue.FixedSize())
 	}
 	return ""
+}
+
+func (g *generateVector) coerce() func(string) string {
+	return func(fieldName string) string {
+		return fmt.Sprintf("%s(%s)", g.valRep.TypeName(), fieldName)
+	}
 }
 
 var _ valueGenerator = &generateVector{}

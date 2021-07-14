@@ -93,7 +93,7 @@ func (g *Generator) Render() ([]byte, error) {
 	final := &generatedCode{
 		imports: map[string]string{
 			"github.com/ferranbt/fastssz": "ssz",
-			"fmt": "",
+			//"fmt": "", // FIXME: uncomment when generating BeaconState
 		},
 	}
 	for _, gc := range g.gc {
@@ -160,7 +160,7 @@ func newValueGenerator(vr types.ValRep, packagePath string) valueGenerator {
 	case *types.ValueUnion:
 		return &generateUnion{ty, packagePath}
 	case *types.ValueVector:
-		return &generateVector{ty, packagePath}
+		return &generateVector{valRep: ty, targetPackage: packagePath}
 	}
 	panic(fmt.Sprintf("Cannot manage generation for unrecognized ValRep implementation %v", vr))
 }

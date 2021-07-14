@@ -21,7 +21,6 @@ func (c *casterConfig) toOverlay(value string) string {
 	return c.toOverlayFunc(value)
 }
 
-
 func (c *casterConfig) setFromOverlay(castFunc func(string) string) {
 	c.fromOverlayFunc = castFunc
 }

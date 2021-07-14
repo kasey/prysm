@@ -107,10 +107,10 @@ var marshalBodyTmpl = `func ({{.Receiver}} {{.Type}}) XXMarshalSSZ() ([]byte, er
 
 func ({{.Receiver}} {{.Type}}) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	var err error
-	offset := {{.FixedSize -}}
+{{- .OffsetDeclaration -}}
 {{- .ValueMarshaling }}
 {{- .VariableValueMarshaling }}
-	return dst, nil
+	return dst, err
 }`
 
 func (g *generateContainer) GenerateMarshalSSZ() *generatedCode {
@@ -122,6 +122,9 @@ func (g *generateContainer) GenerateMarshalSSZ() *generatedCode {
 
 	marshalValueBlocks := make([]string, 0)
 	marshalVariableValueBlocks := make([]string, 0)
+	// only set the offset declaration if we need it
+	// otherwise we'll have an unused variable (syntax error)
+	offsetDeclaration := ""
 	for i, c := range g.Contents {
 		mg := newValueGenerator(c.Value, g.targetPackage)
 		fieldName := fmt.Sprintf("%s.%s", receiverName, c.Key)
@@ -140,6 +143,7 @@ func (g *generateContainer) GenerateMarshalSSZ() *generatedCode {
 		if vmc != "" {
 			marshalVariableValueBlocks = append(marshalVariableValueBlocks, fmt.Sprintf("\n\t// Field %d: %s", i, c.Key))
 			marshalVariableValueBlocks = append(marshalVariableValueBlocks, "\t" + vmc)
+			offsetDeclaration = fmt.Sprintf("\noffset := %d\n", g.FixedSize())
 		}
 	}
 
@@ -147,12 +151,14 @@ func (g *generateContainer) GenerateMarshalSSZ() *generatedCode {
 		Receiver string
 		Type string
 		FixedSize int
+		OffsetDeclaration string
 		ValueMarshaling string
 		VariableValueMarshaling string
 	}{
 		Receiver: receiverName,
 		Type: fmt.Sprintf("*%s", g.TypeName()),
 		FixedSize: g.FixedSize(),
+		OffsetDeclaration: offsetDeclaration,
 		ValueMarshaling: "\n" + strings.Join(marshalValueBlocks, "\n"),
 		VariableValueMarshaling: "\n" + strings.Join(marshalVariableValueBlocks, "\n"),
 	})

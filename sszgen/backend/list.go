@@ -111,7 +111,7 @@ func (g *generateList) variableSizeSSZ(fieldName string) string {
 		SizeComputation string
 	}{
 		FieldName: fieldName,
-		SizeComputation: gg.variableSizeSSZ(fieldName),
+		SizeComputation: gg.variableSizeSSZ("o"),
 	})
 	if err != nil {
 		panic(err)
