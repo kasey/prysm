@@ -13,24 +13,55 @@ type generateList struct {
 	targetPackage string
 }
 
-var generateListGenerateUnmarshalValueTmpl = `{
+var generateListGenerateUnmarshalValueFixedTmpl = `{
 	if len({{.SliceName}}) % {{.ElementSize}} != 0 {
-		return fmt.Errorf("misaligned bytes: %s length is %d, which is not a multiple of %d", "{{.FieldName}}", len({{.SliceName}}), {{.ElementSize}})
+		return fmt.Errorf("misaligned bytes: {{.FieldName}} length is %d, which is not a multiple of {{.ElementSize}}", len({{.SliceName}}))
 	}
 	numElem := len({{.SliceName}}) / {{.ElementSize}}
 	if numElem > {{ .MaxSize }} {
-		return fmt.Errorf("ssz-max exceeded: %s has %d elements, ssz-max is %d", "{{.FieldName}}", numElem, {{.MaxSize}})
+		return fmt.Errorf("ssz-max exceeded: {{.FieldName}} has %d elements, ssz-max is {{.MaxSize}}", numElem)
 	}
 	for {{.LoopVar}} := 0; {{.LoopVar}} < numElem; {{.LoopVar}}++ {
 		var tmp {{.TypeName}}
 		{{.Initializer}}
 		tmpSlice := {{.SliceName}}[{{.LoopVar}}*{{.NestedFixedSize}}:(1+{{.LoopVar}})*{{.NestedFixedSize}}]
-{{.NestedUnmarshal}}
+	{{.NestedUnmarshal}}
 		{{.FieldName}} = append({{.FieldName}}, tmp)
 	}
 }`
 
-func (g *generateList) generateUnmarshalValue(fieldName string, sliceName string) string {
+var generateListGenerateUnmarshalValueVariableTmpl = `{
+// empty lists are zero length, so make sure there is room for an offset
+// before attempting to unmarshal it
+if len({{.SliceName}}) > 3 {
+	firstOffset := ssz.ReadOffset({{.SliceName}}[0:4])
+	if firstOffset % 4 != 0 {
+			return fmt.Errorf("misaligned list bytes: when decoding {{.FieldName}}, end-of-list offset is %d, which is not a multiple of 4 (offset size)", firstOffset)
+	}
+	listLen := firstOffset / 4
+	if listLen > {{.MaxSize}} {
+			return fmt.Errorf("ssz-max exceeded: {{.FieldName}} has %d elements, ssz-max is {{.MaxSize}}", listLen)
+	}
+	listOffsets := make([]uint64, listLen)
+	for {{.LoopVar}} := 0; uint64({{.LoopVar}}) < listLen; {{.LoopVar}}++ {
+		listOffsets[{{.LoopVar}}] = ssz.ReadOffset({{.SliceName}}[{{.LoopVar}}*4:({{.LoopVar}}+1)*4])
+	}
+	for {{.LoopVar}} := 0; {{.LoopVar}} < len(listOffsets); {{.LoopVar}}++ {
+			var tmp {{.TypeName}}
+			{{.Initializer}}
+			var tmpSlice []byte
+			if {{.LoopVar}}+1 == len(listOffsets) {
+				tmpSlice = {{.SliceName}}[listOffsets[{{.LoopVar}}]:]
+			} else {
+				tmpSlice = {{.SliceName}}[listOffsets[{{.LoopVar}}]:listOffsets[{{.LoopVar}}+1]]
+			}
+		{{.NestedUnmarshal}}
+			{{.FieldName}} = append({{.FieldName}}, tmp)
+	}
+}
+}`
+
+func (g *generateList) generateUnmarshalVariableValue(fieldName string, sliceName string) string {
 	loopVar := "i"
 	if fieldName[0:1] == "i" && monoCharacter(fieldName) {
 		loopVar = fieldName + "i"
@@ -44,28 +75,28 @@ func (g *generateList) generateUnmarshalValue(fieldName string, sliceName string
 			initializer = "tmp = " + initializer
 		}
 	}
-	tmpl, err := template.New("generateListGenerateUnmarshalValueTmpl").Parse(generateListGenerateUnmarshalValueTmpl)
+	tmpl, err := template.New("generateListGenerateUnmarshalValueVariableTmpl").Parse(generateListGenerateUnmarshalValueVariableTmpl)
 	if err != nil {
 		panic(err)
 	}
 	buf := bytes.NewBuffer(nil)
 	err = tmpl.Execute(buf, struct{
+		LoopVar string
 		SliceName string
 		ElementSize int
+		TypeName string
 		FieldName string
 		MaxSize int
-		TypeName string
-		LoopVar string
 		Initializer string
 		NestedFixedSize int
 		NestedUnmarshal string
 	}{
+		LoopVar: loopVar,
 		SliceName: sliceName,
 		ElementSize: g.ElementValue.FixedSize(),
+		TypeName: fullyQualifiedTypeName(g.ElementValue, g.targetPackage),
 		FieldName: fieldName,
 		MaxSize: g.MaxSize,
-		TypeName: fullyQualifiedTypeName(g.ElementValue, g.targetPackage),
-		LoopVar: loopVar,
 		Initializer: initializer,
 		NestedFixedSize: g.ElementValue.FixedSize(),
 		NestedUnmarshal: gg.generateUnmarshalValue("tmp", "tmpSlice"),
@@ -73,14 +104,68 @@ func (g *generateList) generateUnmarshalValue(fieldName string, sliceName string
 	if err != nil {
 		panic(err)
 	}
-	return string(buf.Bytes())
+	return buf.String()
+}
+
+func (g *generateList) generateUnmarshalFixedValue(fieldName string, sliceName string) string {
+	loopVar := "i"
+	if fieldName[0:1] == "i" && monoCharacter(fieldName) {
+		loopVar = fieldName + "i"
+	}
+	gg := newValueGenerator(g.ElementValue, g.targetPackage)
+	vi, ok := gg.(valueInitializer)
+	var initializer string
+	if ok {
+		initializer = vi.initializeValue("tmp")
+		if initializer != "" {
+			initializer = "tmp = " + initializer
+		}
+	}
+	tmpl, err := template.New("generateListGenerateUnmarshalValueFixedTmpl").Parse(generateListGenerateUnmarshalValueFixedTmpl)
+	if err != nil {
+		panic(err)
+	}
+	buf := bytes.NewBuffer(nil)
+	err = tmpl.Execute(buf, struct{
+		LoopVar string
+		SliceName string
+		ElementSize int
+		TypeName string
+		FieldName string
+		MaxSize int
+		Initializer string
+		NestedFixedSize int
+		NestedUnmarshal string
+	}{
+		LoopVar: loopVar,
+		SliceName: sliceName,
+		ElementSize: g.ElementValue.FixedSize(),
+		TypeName: fullyQualifiedTypeName(g.ElementValue, g.targetPackage),
+		FieldName: fieldName,
+		MaxSize: g.MaxSize,
+		Initializer: initializer,
+		NestedFixedSize: g.ElementValue.FixedSize(),
+		NestedUnmarshal: gg.generateUnmarshalValue("tmp", "tmpSlice"),
+	})
+	if err != nil {
+		panic(err)
+	}
+	return buf.String()
+}
+
+func (g *generateList) generateUnmarshalValue(fieldName string, sliceName string) string {
+	if g.ElementValue.IsVariableSized() {
+		return g.generateUnmarshalVariableValue(fieldName, sliceName)
+	} else {
+		return g.generateUnmarshalFixedValue(fieldName, sliceName)
+
+	}
 }
 
 func (g *generateList) generateFixedMarshalValue(fieldName string) string {
 	tmpl := `dst = ssz.WriteOffset(dst, offset)
 offset += %s
 `
-	//gg := newValueGenerator(g.ElementValue)
 	offset := g.variableSizeSSZ(fieldName)
 
 	return fmt.Sprintf(tmpl, offset)

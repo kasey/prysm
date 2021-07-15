@@ -93,7 +93,7 @@ func (g *Generator) Render() ([]byte, error) {
 	final := &generatedCode{
 		imports: map[string]string{
 			"github.com/ferranbt/fastssz": "ssz",
-			//"fmt": "", // FIXME: uncomment when generating BeaconState
+			"fmt": "",
 		},
 	}
 	for _, gc := range g.gc {

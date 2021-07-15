@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"path"
 	"testing"
 
@@ -34,11 +35,14 @@ func RunSSZStaticTests(t *testing.T, config string) {
 
 		for _, innerFolder := range innerTestFolders {
 			t.Run(path.Join(folder.Name(), innerFolder.Name()), func(t *testing.T) {
+				if folder.Name() == "Eth1Block" {
+					t.Skip("Unused type")
+				}
 				serializedBytes, err := testutil.BazelFileBytes(innerTestsFolderPath, innerFolder.Name(), "serialized.ssz_snappy")
 				require.NoError(t, err)
 				serializedSSZ, err := snappy.Decode(nil /* dst */, serializedBytes)
 				require.NoError(t, err, "Failed to decompress")
-				object, err := UnmarshalledSSZ(t, serializedSSZ, folder.Name())
+				object, err := UnmarshalledSSZ(serializedSSZ, folder.Name())
 				require.NoError(t, err, "Could not unmarshall serialized SSZ")
 
 				rootsYamlFile, err := testutil.BazelFileBytes(innerTestsFolderPath, innerFolder.Name(), "roots.yaml")
@@ -90,73 +94,105 @@ func RunSSZStaticTests(t *testing.T, config string) {
 	}
 }
 
-// UnmarshalledSSZ unmarshalls serialized input.
-func UnmarshalledSSZ(t *testing.T, serializedBytes []byte, folderName string) (interface{}, error) {
-	var obj interface{}
-	switch folderName {
+type ExperimentalSSZ interface {
+	XXUnmarshalSSZ(buf []byte) error
+	XXMarshalSSZ() ([]byte, error)
+	fssz.Unmarshaler
+}
+
+func GetInstanceByName(name string) (interface{}, error) {
+	switch name {
 	case "Attestation":
-		obj = &ethpb.Attestation{}
+		return &ethpb.Attestation{}, nil
 	case "AttestationData":
-		obj = &ethpb.AttestationData{}
+		return &ethpb.AttestationData{}, nil
 	case "AttesterSlashing":
-		obj = &ethpb.AttesterSlashing{}
+		return &ethpb.AttesterSlashing{}, nil
 	case "AggregateAndProof":
-		obj = &ethpb.AggregateAttestationAndProof{}
+		return &ethpb.AggregateAttestationAndProof{}, nil
 	case "BeaconBlock":
-		obj = &ethpb.BeaconBlock{}
+		return &ethpb.BeaconBlock{}, nil
 	case "BeaconBlockBody":
-		obj = &ethpb.BeaconBlockBody{}
+		return &ethpb.BeaconBlockBody{}, nil
 	case "BeaconBlockHeader":
-		obj = &ethpb.BeaconBlockHeader{}
+		return &ethpb.BeaconBlockHeader{}, nil
 	case "BeaconState":
-		obj = &pb.BeaconState{}
+		return &pb.BeaconState{}, nil
 	case "Checkpoint":
-		obj = &ethpb.Checkpoint{}
+		return &ethpb.Checkpoint{}, nil
 	case "Deposit":
-		obj = &ethpb.Deposit{}
+		return &ethpb.Deposit{}, nil
 	case "DepositMessage":
-		obj = &pb.DepositMessage{}
+		return &pb.DepositMessage{}, nil
 	case "DepositData":
-		obj = &ethpb.Deposit_Data{}
+		return &ethpb.Deposit_Data{}, nil
 	case "Eth1Data":
-		obj = &ethpb.Eth1Data{}
-	case "Eth1Block":
-		t.Skip("Unused type")
-		return nil, nil
+		return &ethpb.Eth1Data{}, nil
 	case "Fork":
-		obj = &pb.Fork{}
+		return &pb.Fork{}, nil
 	case "ForkData":
-		obj = &pb.ForkData{}
+		return &pb.ForkData{}, nil
 	case "HistoricalBatch":
-		obj = &pb.HistoricalBatch{}
+		return &pb.HistoricalBatch{}, nil
 	case "IndexedAttestation":
-		obj = &ethpb.IndexedAttestation{}
+		return &ethpb.IndexedAttestation{}, nil
 	case "PendingAttestation":
-		obj = &pb.PendingAttestation{}
+		return &pb.PendingAttestation{}, nil
 	case "ProposerSlashing":
-		obj = &ethpb.ProposerSlashing{}
+		return &ethpb.ProposerSlashing{}, nil
 	case "SignedAggregateAndProof":
-		obj = &ethpb.SignedAggregateAttestationAndProof{}
+		return &ethpb.SignedAggregateAttestationAndProof{}, nil
 	case "SignedBeaconBlock":
-		obj = &ethpb.SignedBeaconBlock{}
+		return &ethpb.SignedBeaconBlock{}, nil
 	case "SignedBeaconBlockHeader":
-		obj = &ethpb.SignedBeaconBlockHeader{}
+		return &ethpb.SignedBeaconBlockHeader{}, nil
 	case "SignedVoluntaryExit":
-		obj = &ethpb.SignedVoluntaryExit{}
+		return &ethpb.SignedVoluntaryExit{}, nil
 	case "SigningData":
-		obj = &pb.SigningData{}
+		return &pb.SigningData{}, nil
 	case "Validator":
-		obj = &ethpb.Validator{}
+		return &ethpb.Validator{}, nil
 	case "VoluntaryExit":
-		obj = &ethpb.VoluntaryExit{}
+		return &ethpb.VoluntaryExit{}, nil
 	default:
 		return nil, errors.New("type not found")
 	}
-	var err error
+}
+
+// UnmarshalledSSZ unmarshalls serialized input.
+func UnmarshalledSSZ(serializedBytes []byte, folderName string) (interface{}, error) {
+	obj, err := GetInstanceByName(folderName)
+	if err != nil {
+		return nil, err
+	}
+	if o, ok := obj.(ExperimentalSSZ); ok {
+		err = o.XXUnmarshalSSZ(serializedBytes)
+		if err != nil {
+			return nil, err
+		}
+		marshalled, err := o.XXMarshalSSZ()
+		if err != nil {
+			return nil, err
+		}
+
+		// get a new instance for unmarshaling
+		obj, err = GetInstanceByName(folderName)
+		if err != nil {
+			return nil, err
+		}
+		oo, ok := obj.(fssz.Unmarshaler)
+		if !ok {
+			return nil, fmt.Errorf("%s implements ExperimentalSSZ but not fssz.Unmarshaler?", folderName)
+		}
+		// make sure we can unmarshal with fastssz code
+		err = oo.UnmarshalSSZ(marshalled)
+		return oo, err
+	}
 	if o, ok := obj.(fssz.Unmarshaler); ok {
 		err = o.UnmarshalSSZ(serializedBytes)
-	} else {
-		err = errors.New("could not unmarshal object, not a fastssz compatible object")
+		return obj, err
 	}
+
+	err = errors.New("could not unmarshal object, not a fastssz compatible object")
 	return obj, err
 }
