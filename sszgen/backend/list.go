@@ -117,7 +117,7 @@ func (g *generateList) generateUnmarshalFixedValue(fieldName string, sliceName s
 	nestedUnmarshal := ""
 	switch g.valRep.ElementValue.(type) {
 	case *types.ValueByte:
-		return fmt.Sprintf("%s = append([]byte{}, %s...)", fieldName, g.casterConfig.toOverlay("tmpSlice"))
+		return fmt.Sprintf("%s = append([]byte{}, %s...)", fieldName, g.casterConfig.toOverlay(sliceName))
 	default:
 		nestedUnmarshal = gg.generateUnmarshalValue("tmp", "tmpSlice")
 	}
