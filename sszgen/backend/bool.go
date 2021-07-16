@@ -6,22 +6,24 @@ import (
 )
 
 type generateBool struct {
-	*types.ValueBool
+	valRep *types.ValueBool
 	targetPackage string
+	casterConfig
 }
 
 func (g *generateBool) coerce() func(string) string {
 	return func(fieldName string) string {
-		return fmt.Sprintf("%s(%s)", g.TypeName(), fieldName)
+		return fmt.Sprintf("%s(%s)", g.valRep.TypeName(), fieldName)
 	}
 }
 
 func (g *generateBool) generateFixedMarshalValue(fieldName string) string {
-	return ""
+	return fmt.Sprintf("dst = ssz.MarshalBool(dst, %s)", fieldName)
 }
 
-func (g *generateBool) generateUnmarshalValue(fieldName string, s string) string {
-	return ""
+func (g *generateBool) generateUnmarshalValue(fieldName string, offset string) string {
+	convert := fmt.Sprintf("ssz.UnmarshalBool(%s)", offset)
+	return fmt.Sprintf("%s = %s", fieldName, g.casterConfig.toOverlay(convert))
 }
 
 func (g *generateBool) variableSizeSSZ(fieldname string) string {
