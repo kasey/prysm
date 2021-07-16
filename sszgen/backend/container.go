@@ -126,6 +126,10 @@ func (g *generateContainer) GenerateMarshalSSZ() *generatedCode {
 	// otherwise we'll have an unused variable (syntax error)
 	offsetDeclaration := ""
 	for i, c := range g.Contents {
+		// only lists need the offset variable
+		if containsList(c.Value) {
+			offsetDeclaration = fmt.Sprintf("\noffset := %d\n", g.FixedSize())
+		}
 		mg := newValueGenerator(c.Value, g.targetPackage)
 		fieldName := fmt.Sprintf("%s.%s", receiverName, c.Key)
 		mv := mg.generateFixedMarshalValue(fieldName)
@@ -143,7 +147,6 @@ func (g *generateContainer) GenerateMarshalSSZ() *generatedCode {
 		if vmc != "" {
 			marshalVariableValueBlocks = append(marshalVariableValueBlocks, fmt.Sprintf("\n\t// Field %d: %s", i, c.Key))
 			marshalVariableValueBlocks = append(marshalVariableValueBlocks, "\t" + vmc)
-			offsetDeclaration = fmt.Sprintf("\noffset := %d\n", g.FixedSize())
 		}
 	}
 
@@ -296,6 +299,22 @@ func (g *generateContainer) initializeValue(fieldName string) string {
 		fqType = importAlias(g.PackagePath()) + "." + fqType
 	}
 	return fmt.Sprintf("new(%s)", fullyQualifiedTypeName(g.ValueContainer, g.targetPackage))
+}
+
+func containsList(v types.ValRep) bool {
+	switch t := v.(type) {
+	case *types.ValueContainer:
+		// we only care about top-level lists, so
+		// we don't want to look deeper into containers
+		return false
+	case *types.ValueList:
+		return true
+	case *types.ValueOverlay:
+		return containsList(t.Underlying)
+	case *types.ValuePointer:
+		return containsList(t.Referent)
+	}
+	return false
 }
 
 var _ methodGenerator = &generateContainer{}
