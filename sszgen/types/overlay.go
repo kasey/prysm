@@ -17,7 +17,7 @@ func (vo *ValueOverlay) PackagePath() string {
 }
 
 func (vo *ValueOverlay) FixedSize() int {
-	if vo.isBitfield() {
+	if vo.IsBitfield() {
 		return vo.bitfieldFixedSize()
 	}
 	return vo.Underlying.FixedSize()
@@ -27,7 +27,7 @@ func (vo *ValueOverlay) IsVariableSized() bool {
 	return vo.Underlying.IsVariableSized()
 }
 
-func (vo *ValueOverlay) isBitfield() bool {
+func (vo *ValueOverlay) IsBitfield() bool {
 	if vo.Package == "github.com/prysmaticlabs/go-bitfield" {
 		return true
 	}

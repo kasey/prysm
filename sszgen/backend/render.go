@@ -144,13 +144,13 @@ type coercer interface {
 func newValueGenerator(vr types.ValRep, packagePath string) valueGenerator {
 	switch ty := vr.(type) {
 	case *types.ValueBool:
-		return &generateBool{ty, packagePath}
+		return &generateBool{valRep: ty, targetPackage: packagePath}
 	case *types.ValueByte:
 		return &generateByte{ty, packagePath}
 	case *types.ValueContainer:
 		return &generateContainer{ty, packagePath}
 	case *types.ValueList:
-		return &generateList{ty, packagePath}
+		return &generateList{valRep: ty, targetPackage: packagePath}
 	case *types.ValueOverlay:
 		return &generateOverlay{ty, packagePath}
 	case *types.ValuePointer:

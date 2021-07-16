@@ -9,8 +9,9 @@ import (
 )
 
 type generateList struct {
-	*types.ValueList
+	valRep *types.ValueList
 	targetPackage string
+	casterConfig
 }
 
 var generateListGenerateUnmarshalValueFixedTmpl = `{
@@ -66,7 +67,7 @@ func (g *generateList) generateUnmarshalVariableValue(fieldName string, sliceNam
 	if fieldName[0:1] == "i" && monoCharacter(fieldName) {
 		loopVar = fieldName + "i"
 	}
-	gg := newValueGenerator(g.ElementValue, g.targetPackage)
+	gg := newValueGenerator(g.valRep.ElementValue, g.targetPackage)
 	vi, ok := gg.(valueInitializer)
 	var initializer string
 	if ok {
@@ -93,12 +94,12 @@ func (g *generateList) generateUnmarshalVariableValue(fieldName string, sliceNam
 	}{
 		LoopVar: loopVar,
 		SliceName: sliceName,
-		ElementSize: g.ElementValue.FixedSize(),
-		TypeName: fullyQualifiedTypeName(g.ElementValue, g.targetPackage),
+		ElementSize: g.valRep.ElementValue.FixedSize(),
+		TypeName: fullyQualifiedTypeName(g.valRep.ElementValue, g.targetPackage),
 		FieldName: fieldName,
-		MaxSize: g.MaxSize,
+		MaxSize: g.valRep.MaxSize,
 		Initializer: initializer,
-		NestedFixedSize: g.ElementValue.FixedSize(),
+		NestedFixedSize: g.valRep.ElementValue.FixedSize(),
 		NestedUnmarshal: gg.generateUnmarshalValue("tmp", "tmpSlice"),
 	})
 	if err != nil {
@@ -112,7 +113,14 @@ func (g *generateList) generateUnmarshalFixedValue(fieldName string, sliceName s
 	if fieldName[0:1] == "i" && monoCharacter(fieldName) {
 		loopVar = fieldName + "i"
 	}
-	gg := newValueGenerator(g.ElementValue, g.targetPackage)
+	gg := newValueGenerator(g.valRep.ElementValue, g.targetPackage)
+	nestedUnmarshal := ""
+	switch g.valRep.ElementValue.(type) {
+	case *types.ValueByte:
+		return fmt.Sprintf("%s = append([]byte{}, %s...)", fieldName, g.casterConfig.toOverlay("tmpSlice"))
+	default:
+		nestedUnmarshal = gg.generateUnmarshalValue("tmp", "tmpSlice")
+	}
 	vi, ok := gg.(valueInitializer)
 	var initializer string
 	if ok {
@@ -139,13 +147,13 @@ func (g *generateList) generateUnmarshalFixedValue(fieldName string, sliceName s
 	}{
 		LoopVar: loopVar,
 		SliceName: sliceName,
-		ElementSize: g.ElementValue.FixedSize(),
-		TypeName: fullyQualifiedTypeName(g.ElementValue, g.targetPackage),
+		ElementSize: g.valRep.ElementValue.FixedSize(),
+		TypeName: fullyQualifiedTypeName(g.valRep.ElementValue, g.targetPackage),
 		FieldName: fieldName,
-		MaxSize: g.MaxSize,
+		MaxSize: g.valRep.MaxSize,
 		Initializer: initializer,
-		NestedFixedSize: g.ElementValue.FixedSize(),
-		NestedUnmarshal: gg.generateUnmarshalValue("tmp", "tmpSlice"),
+		NestedFixedSize: g.valRep.ElementValue.FixedSize(),
+		NestedUnmarshal: nestedUnmarshal,
 	})
 	if err != nil {
 		panic(err)
@@ -154,7 +162,7 @@ func (g *generateList) generateUnmarshalFixedValue(fieldName string, sliceName s
 }
 
 func (g *generateList) generateUnmarshalValue(fieldName string, sliceName string) string {
-	if g.ElementValue.IsVariableSized() {
+	if g.valRep.ElementValue.IsVariableSized() {
 		return g.generateUnmarshalVariableValue(fieldName, sliceName)
 	} else {
 		return g.generateUnmarshalFixedValue(fieldName, sliceName)
@@ -181,11 +189,11 @@ var variableSizedListTmpl = `func() int {
 }()`
 
 func (g *generateList) variableSizeSSZ(fieldName string) string {
-	if !g.ElementValue.IsVariableSized() {
-		return fmt.Sprintf("len(%s) * %d", fieldName, g.ElementValue.FixedSize())
+	if !g.valRep.ElementValue.IsVariableSized() {
+		return fmt.Sprintf("len(%s) * %d", fieldName, g.valRep.ElementValue.FixedSize())
 	}
 
-	gg := newValueGenerator(g.ElementValue, g.targetPackage)
+	gg := newValueGenerator(g.valRep.ElementValue, g.targetPackage)
 	vslTmpl, err := template.New("variableSizedListTmpl").Parse(variableSizedListTmpl)
 	if err != nil {
 		panic(err)
@@ -257,7 +265,7 @@ func (g *generateList) generateVariableMarshalValue(fieldName string) string {
 	}
 	var marshalValue string
 	var offsetMgmt string
-	switch g.ElementValue.(type) {
+	switch g.valRep.ElementValue.(type) {
 	case *types.ValueByte:
 		marshalValue = fmt.Sprintf("dst = append(dst, %s...)", fieldName)
 	default:
@@ -268,12 +276,12 @@ func (g *generateList) generateVariableMarshalValue(fieldName string) string {
 		t := `for _, %s := range %s {
 	%s
 }`
-		gg := newValueGenerator(g.ElementValue, g.targetPackage)
+		gg := newValueGenerator(g.valRep.ElementValue, g.targetPackage)
 		var internal string
-		if g.ElementValue.IsVariableSized() {
+		if g.valRep.ElementValue.IsVariableSized() {
 			vm, ok := gg.(variableMarshaller)
 			if !ok {
-				panic(fmt.Sprintf("variable size type does not implement variableMarshaller: %v", g.ElementValue))
+				panic(fmt.Sprintf("variable size type does not implement variableMarshaller: %v", g.valRep.ElementValue))
 			}
 			internal = vm.generateVariableMarshalValue(nestedFieldName)
 			offsetMgmt = variableOffsetManagement(gg, fieldName, nestedFieldName)
@@ -290,7 +298,7 @@ func (g *generateList) generateVariableMarshalValue(fieldName string) string {
 		OffsetManagement string
 	}{
 		FieldName: fieldName,
-		MaxSize: g.MaxSize,
+		MaxSize: g.valRep.MaxSize,
 		MarshalValue: marshalValue,
 		OffsetManagement: offsetMgmt,
 	})

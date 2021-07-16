@@ -21,13 +21,23 @@ func (g *generateOverlay) toOverlay() func(string) string {
 	}
 }
 
-func (g *generateOverlay) generateUnmarshalValue(fieldName string, offset string) string {
+func (g *generateOverlay) generateUnmarshalValue(fieldName string, sliceName string) string {
 	gg := newValueGenerator(g.Underlying, g.targetPackage)
 	c, ok := gg.(caster)
 	if ok {
 		c.setToOverlay(g.toOverlay())
 	}
-	return gg.generateUnmarshalValue(fieldName, offset)
+	umv := gg.generateUnmarshalValue(fieldName, sliceName)
+	if g.IsBitfield() {
+		switch t := g.Underlying.(type) {
+		case *types.ValueList:
+			return fmt.Sprintf(`if err = ssz.ValidateBitlist(%s, %d); err != nil {
+return err
+}
+%s`, sliceName, t.MaxSize, umv)
+		}
+	}
+	return umv
 }
 
 func (g *generateOverlay) generateFixedMarshalValue(fieldName string) string {
