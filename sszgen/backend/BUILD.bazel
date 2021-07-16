@@ -14,6 +14,7 @@ go_library(
         "uint.go",
         "union.go",
         "vector.go",
+        "visitor.go",
     ],
     importpath = "github.com/prysmaticlabs/prysm/sszgen/backend",
     visibility = ["//visibility:public"],
