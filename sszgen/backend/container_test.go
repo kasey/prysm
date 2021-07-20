@@ -3,6 +3,7 @@ package backend
 import (
 	"go/format"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/prysmaticlabs/prysm/shared/testutil/require"
@@ -45,6 +46,31 @@ func TestGenerateContainer_GenerateUnmarshalSSZ(t *testing.T) {
 	actual := string(actualBytes)
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
+}
+
+func TestUnmarshalSteps(t *testing.T) {
+	b, err := os.ReadFile("testdata/TestUnmarshalSteps.expected")
+	require.NoError(t, err)
+	formatted, err := format.Source(b)
+	require.NoError(t, err)
+	expected := string(formatted)
+
+	mg := newMethodGenerator(testFixBeaconState, "")
+	var gc *generateContainer
+	switch ty := mg.(type) {
+	case *generateContainer:
+		gc = ty
+	default:
+		t.Errorf("Expected newMethodGenerator to wrap testFixBeaconState in a *GenerateContainer")
+	}
+	ums := gc.unmarshalSteps()
+	require.Equal(t, 21, len(ums))
+	require.Equal(t, ums[15].nextVariable.fieldNumber, ums[16].fieldNumber)
+
+	gotRaw := strings.Join([]string{ums.fixedSlices(), "", ums.variableSlices(gc.fixedOffset())}, "\n")
+	goFormatted, err := format.Source([]byte(gotRaw))
+	require.NoError(t, err)
+	require.Equal(t, expected, string(goFormatted))
 }
 
 var testFixStatus types.ValRep = &types.ValueContainer{Name: "Status", Package: "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1", Contents: []types.ContainerField{{Key: "ForkDigest", Value: &types.ValueVector{Size: 4, ElementValue: &types.ValueByte{Name: "byte"}}}, {Key: "FinalizedRoot", Value: &types.ValueVector{Size: 32, ElementValue: &types.ValueByte{Name: "byte"}}}, {Key: "FinalizedEpoch", Value: &types.ValueOverlay{Name: "Epoch", Package: "github.com/prysmaticlabs/eth2-types", Underlying: &types.ValueUint{Name: "uint64", Size: 64}}}, {Key: "HeadRoot", Value: &types.ValueVector{Size: 32, ElementValue: &types.ValueByte{Name: "byte"}}}, {Key: "HeadSlot", Value: &types.ValueOverlay{Name: "Slot", Package: "github.com/prysmaticlabs/eth2-types", Underlying: &types.ValueUint{Name: "uint64", Size: 64}}}}}

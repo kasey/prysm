@@ -53,7 +53,7 @@ ssz_gen_marshal(
 
 go_library(
     name = "go_default_library",
-    srcs = [":ssz_generated_files", "methodical.ssz.go", "beaconstate.ssz.go"],
+    srcs = [":ssz_generated_files", "methodical.ssz.go"],
     embed = [":v1_go_proto"],
     visibility = ["//visibility:public"],
     deps = SSZ_DEPS,

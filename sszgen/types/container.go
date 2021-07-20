@@ -43,6 +43,9 @@ func (vc *ValueContainer) PackagePath() string {
 }
 
 func (vc *ValueContainer) FixedSize() int {
+	if vc.IsVariableSized() {
+		return 4
+	}
 	total := 0
 	for _, c := range vc.Contents {
 		o := c.Value

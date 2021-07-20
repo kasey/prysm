@@ -1,0 +1,1592 @@
+package v1
+
+import (
+	"fmt"
+	ssz "github.com/ferranbt/fastssz"
+	prysmaticlabs_eth2_types "github.com/prysmaticlabs/eth2-types"
+	prysmaticlabs_go_bitfield "github.com/prysmaticlabs/go-bitfield"
+)
+
+func (c *AggregateAttestationAndProof) XXSizeSSZ() int {
+	size := 108
+	if c.Aggregate == nil {
+		c.Aggregate = new(Attestation)
+	}
+	size += c.Aggregate.SizeSSZ()
+	return size
+}
+func (c *AggregateAttestationAndProof) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *AggregateAttestationAndProof) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+	offset := 108
+
+	// Field 0: AggregatorIndex
+	dst = ssz.MarshalUint64(dst, uint64(c.AggregatorIndex))
+
+	// Field 1: Aggregate
+	if c.Aggregate == nil {
+		c.Aggregate = new(Attestation)
+	}
+	dst = ssz.WriteOffset(dst, offset)
+	offset += c.Aggregate.SizeSSZ()
+
+	// Field 2: SelectionProof
+	if len(c.SelectionProof) != 96 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.SelectionProof...)
+
+	// Field 1: Aggregate
+	if dst, err = c.Aggregate.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+	return dst, err
+}
+func (c *AggregateAttestationAndProof) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size < 108 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:8]    // c.AggregatorIndex
+	s2 := buf[12:108] // c.SelectionProof
+
+	v1 := ssz.ReadOffset(buf[8:12]) // c.Aggregate
+	if v1 < 108 {
+		return ssz.ErrInvalidVariableOffset
+	}
+	if v1 > size {
+		return ssz.ErrOffset
+	}
+	s1 := buf[v1:] // c.Aggregate
+
+	// Field 0: AggregatorIndex
+	c.AggregatorIndex = prysmaticlabs_eth2_types.ValidatorIndex(ssz.UnmarshallUint64(s0))
+
+	// Field 1: Aggregate
+	c.Aggregate = new(Attestation)
+	if err = c.Aggregate.UnmarshalSSZ(s1); err != nil {
+		return err
+	}
+
+	// Field 2: SelectionProof
+	c.SelectionProof = append([]byte{}, s2...)
+	return err
+}
+func (c *Attestation) XXSizeSSZ() int {
+	size := 228
+
+	return size
+}
+func (c *Attestation) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *Attestation) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+	offset := 228
+
+	// Field 0: AggregationBits
+	dst = ssz.WriteOffset(dst, offset)
+	offset += len(c.AggregationBits) * 1
+
+	// Field 1: Data
+	if c.Data == nil {
+		c.Data = new(AttestationData)
+	}
+	if dst, err = c.Data.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+
+	// Field 2: Signature
+	if len(c.Signature) != 96 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.Signature...)
+
+	return dst, err
+}
+func (c *Attestation) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size < 228 {
+		return ssz.ErrSize
+	}
+
+	s1 := buf[4:132]   // c.Data
+	s2 := buf[132:228] // c.Signature
+
+	v0 := ssz.ReadOffset(buf[0:4]) // c.AggregationBits
+	if v0 < 228 {
+		return ssz.ErrInvalidVariableOffset
+	}
+	if v0 > size {
+		return ssz.ErrOffset
+	}
+	s0 := buf[v0:] // c.AggregationBits
+
+	// Field 0: AggregationBits
+	if err = ssz.ValidateBitlist(s0, 2048); err != nil {
+		return err
+	}
+	c.AggregationBits = append([]byte{}, prysmaticlabs_go_bitfield.Bitlist(s0)...)
+
+	// Field 1: Data
+	c.Data = new(AttestationData)
+	if err = c.Data.UnmarshalSSZ(s1); err != nil {
+		return err
+	}
+
+	// Field 2: Signature
+	c.Signature = append([]byte{}, s2...)
+	return err
+}
+func (c *AttestationData) XXSizeSSZ() int {
+	size := 128
+
+	return size
+}
+func (c *AttestationData) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *AttestationData) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field 0: Slot
+	dst = ssz.MarshalUint64(dst, uint64(c.Slot))
+
+	// Field 1: Index
+	dst = ssz.MarshalUint64(dst, uint64(c.Index))
+
+	// Field 2: BeaconBlockRoot
+	if len(c.BeaconBlockRoot) != 32 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.BeaconBlockRoot...)
+
+	// Field 3: Source
+	if c.Source == nil {
+		c.Source = new(Checkpoint)
+	}
+	if dst, err = c.Source.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+
+	// Field 4: Target
+	if c.Target == nil {
+		c.Target = new(Checkpoint)
+	}
+	if dst, err = c.Target.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+
+	return dst, err
+}
+func (c *AttestationData) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 128 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:8]    // c.Slot
+	s1 := buf[8:16]   // c.Index
+	s2 := buf[16:48]  // c.BeaconBlockRoot
+	s3 := buf[48:88]  // c.Source
+	s4 := buf[88:128] // c.Target
+
+	// Field 0: Slot
+	c.Slot = prysmaticlabs_eth2_types.Slot(ssz.UnmarshallUint64(s0))
+
+	// Field 1: Index
+	c.Index = prysmaticlabs_eth2_types.CommitteeIndex(ssz.UnmarshallUint64(s1))
+
+	// Field 2: BeaconBlockRoot
+	c.BeaconBlockRoot = append([]byte{}, s2...)
+
+	// Field 3: Source
+	c.Source = new(Checkpoint)
+	if err = c.Source.UnmarshalSSZ(s3); err != nil {
+		return err
+	}
+
+	// Field 4: Target
+	c.Target = new(Checkpoint)
+	if err = c.Target.UnmarshalSSZ(s4); err != nil {
+		return err
+	}
+	return err
+}
+func (c *AttesterSlashing) XXSizeSSZ() int {
+	size := 8
+	if c.Attestation_1 == nil {
+		c.Attestation_1 = new(IndexedAttestation)
+	}
+	size += c.Attestation_1.SizeSSZ()
+	if c.Attestation_2 == nil {
+		c.Attestation_2 = new(IndexedAttestation)
+	}
+	size += c.Attestation_2.SizeSSZ()
+	return size
+}
+func (c *AttesterSlashing) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *AttesterSlashing) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+	offset := 8
+
+	// Field 0: Attestation_1
+	if c.Attestation_1 == nil {
+		c.Attestation_1 = new(IndexedAttestation)
+	}
+	dst = ssz.WriteOffset(dst, offset)
+	offset += c.Attestation_1.SizeSSZ()
+
+	// Field 1: Attestation_2
+	if c.Attestation_2 == nil {
+		c.Attestation_2 = new(IndexedAttestation)
+	}
+	dst = ssz.WriteOffset(dst, offset)
+	offset += c.Attestation_2.SizeSSZ()
+
+	// Field 0: Attestation_1
+	if dst, err = c.Attestation_1.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+
+	// Field 1: Attestation_2
+	if dst, err = c.Attestation_2.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+	return dst, err
+}
+func (c *AttesterSlashing) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size < 8 {
+		return ssz.ErrSize
+	}
+
+	v0 := ssz.ReadOffset(buf[0:4]) // c.Attestation_1
+	if v0 < 8 {
+		return ssz.ErrInvalidVariableOffset
+	}
+	if v0 > size {
+		return ssz.ErrOffset
+	}
+	v1 := ssz.ReadOffset(buf[4:8]) // c.Attestation_2
+	if v1 > size || v1 < v0 {
+		return ssz.ErrOffset
+	}
+	s0 := buf[v0:v1] // c.Attestation_1
+	s1 := buf[v1:]   // c.Attestation_2
+
+	// Field 0: Attestation_1
+	c.Attestation_1 = new(IndexedAttestation)
+	if err = c.Attestation_1.UnmarshalSSZ(s0); err != nil {
+		return err
+	}
+
+	// Field 1: Attestation_2
+	c.Attestation_2 = new(IndexedAttestation)
+	if err = c.Attestation_2.UnmarshalSSZ(s1); err != nil {
+		return err
+	}
+	return err
+}
+func (c *BeaconBlock) XXSizeSSZ() int {
+	size := 84
+	if c.Body == nil {
+		c.Body = new(BeaconBlockBody)
+	}
+	size += c.Body.SizeSSZ()
+	return size
+}
+func (c *BeaconBlock) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *BeaconBlock) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+	offset := 84
+
+	// Field 0: Slot
+	dst = ssz.MarshalUint64(dst, uint64(c.Slot))
+
+	// Field 1: ProposerIndex
+	dst = ssz.MarshalUint64(dst, uint64(c.ProposerIndex))
+
+	// Field 2: ParentRoot
+	if len(c.ParentRoot) != 32 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.ParentRoot...)
+
+	// Field 3: StateRoot
+	if len(c.StateRoot) != 32 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.StateRoot...)
+
+	// Field 4: Body
+	if c.Body == nil {
+		c.Body = new(BeaconBlockBody)
+	}
+	dst = ssz.WriteOffset(dst, offset)
+	offset += c.Body.SizeSSZ()
+
+	// Field 4: Body
+	if dst, err = c.Body.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+	return dst, err
+}
+func (c *BeaconBlock) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size < 84 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:8]   // c.Slot
+	s1 := buf[8:16]  // c.ProposerIndex
+	s2 := buf[16:48] // c.ParentRoot
+	s3 := buf[48:80] // c.StateRoot
+
+	v4 := ssz.ReadOffset(buf[80:84]) // c.Body
+	if v4 < 84 {
+		return ssz.ErrInvalidVariableOffset
+	}
+	if v4 > size {
+		return ssz.ErrOffset
+	}
+	s4 := buf[v4:] // c.Body
+
+	// Field 0: Slot
+	c.Slot = prysmaticlabs_eth2_types.Slot(ssz.UnmarshallUint64(s0))
+
+	// Field 1: ProposerIndex
+	c.ProposerIndex = prysmaticlabs_eth2_types.ValidatorIndex(ssz.UnmarshallUint64(s1))
+
+	// Field 2: ParentRoot
+	c.ParentRoot = append([]byte{}, s2...)
+
+	// Field 3: StateRoot
+	c.StateRoot = append([]byte{}, s3...)
+
+	// Field 4: Body
+	c.Body = new(BeaconBlockBody)
+	if err = c.Body.UnmarshalSSZ(s4); err != nil {
+		return err
+	}
+	return err
+}
+func (c *BeaconBlockV1) XXSizeSSZ() int {
+	size := 84
+	if c.Body == nil {
+		c.Body = new(BeaconBlockBodyV1)
+	}
+	size += c.Body.SizeSSZ()
+	return size
+}
+func (c *BeaconBlockV1) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *BeaconBlockV1) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+	offset := 84
+
+	// Field 0: Slot
+	dst = ssz.MarshalUint64(dst, uint64(c.Slot))
+
+	// Field 1: ProposerIndex
+	dst = ssz.MarshalUint64(dst, uint64(c.ProposerIndex))
+
+	// Field 2: ParentRoot
+	if len(c.ParentRoot) != 32 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.ParentRoot...)
+
+	// Field 3: StateRoot
+	if len(c.StateRoot) != 32 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.StateRoot...)
+
+	// Field 4: Body
+	if c.Body == nil {
+		c.Body = new(BeaconBlockBodyV1)
+	}
+	dst = ssz.WriteOffset(dst, offset)
+	offset += c.Body.SizeSSZ()
+
+	// Field 4: Body
+	if dst, err = c.Body.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+	return dst, err
+}
+func (c *BeaconBlockV1) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size < 84 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:8]   // c.Slot
+	s1 := buf[8:16]  // c.ProposerIndex
+	s2 := buf[16:48] // c.ParentRoot
+	s3 := buf[48:80] // c.StateRoot
+
+	v4 := ssz.ReadOffset(buf[80:84]) // c.Body
+	if v4 < 84 {
+		return ssz.ErrInvalidVariableOffset
+	}
+	if v4 > size {
+		return ssz.ErrOffset
+	}
+	s4 := buf[v4:] // c.Body
+
+	// Field 0: Slot
+	c.Slot = prysmaticlabs_eth2_types.Slot(ssz.UnmarshallUint64(s0))
+
+	// Field 1: ProposerIndex
+	c.ProposerIndex = prysmaticlabs_eth2_types.ValidatorIndex(ssz.UnmarshallUint64(s1))
+
+	// Field 2: ParentRoot
+	c.ParentRoot = append([]byte{}, s2...)
+
+	// Field 3: StateRoot
+	c.StateRoot = append([]byte{}, s3...)
+
+	// Field 4: Body
+	c.Body = new(BeaconBlockBodyV1)
+	if err = c.Body.UnmarshalSSZ(s4); err != nil {
+		return err
+	}
+	return err
+}
+func (c *BeaconBlockHeader) XXSizeSSZ() int {
+	size := 112
+
+	return size
+}
+func (c *BeaconBlockHeader) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *BeaconBlockHeader) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field 0: Slot
+	dst = ssz.MarshalUint64(dst, uint64(c.Slot))
+
+	// Field 1: ProposerIndex
+	dst = ssz.MarshalUint64(dst, uint64(c.ProposerIndex))
+
+	// Field 2: ParentRoot
+	if len(c.ParentRoot) != 32 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.ParentRoot...)
+
+	// Field 3: StateRoot
+	if len(c.StateRoot) != 32 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.StateRoot...)
+
+	// Field 4: BodyRoot
+	if len(c.BodyRoot) != 32 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.BodyRoot...)
+
+	return dst, err
+}
+func (c *BeaconBlockHeader) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 112 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:8]    // c.Slot
+	s1 := buf[8:16]   // c.ProposerIndex
+	s2 := buf[16:48]  // c.ParentRoot
+	s3 := buf[48:80]  // c.StateRoot
+	s4 := buf[80:112] // c.BodyRoot
+
+	// Field 0: Slot
+	c.Slot = prysmaticlabs_eth2_types.Slot(ssz.UnmarshallUint64(s0))
+
+	// Field 1: ProposerIndex
+	c.ProposerIndex = prysmaticlabs_eth2_types.ValidatorIndex(ssz.UnmarshallUint64(s1))
+
+	// Field 2: ParentRoot
+	c.ParentRoot = append([]byte{}, s2...)
+
+	// Field 3: StateRoot
+	c.StateRoot = append([]byte{}, s3...)
+
+	// Field 4: BodyRoot
+	c.BodyRoot = append([]byte{}, s4...)
+	return err
+}
+func (c *BeaconBlockBodyV1) XXSizeSSZ() int {
+	size := 380
+	size += len(c.ProposerSlashings) * 416
+	size += func() int {
+		s := 0
+		for _, o := range c.AttesterSlashings {
+			s += 4
+			s += o.SizeSSZ()
+		}
+		return s
+	}()
+	size += func() int {
+		s := 0
+		for _, o := range c.Attestations {
+			s += 4
+			s += o.SizeSSZ()
+		}
+		return s
+	}()
+	size += len(c.Deposits) * 1240
+	size += len(c.VoluntaryExits) * 112
+	return size
+}
+func (c *BeaconBlockBodyV1) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *BeaconBlockBodyV1) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+	offset := 380
+
+	// Field 0: RandaoReveal
+	if len(c.RandaoReveal) != 96 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.RandaoReveal...)
+
+	// Field 1: Eth1Data
+	if c.Eth1Data == nil {
+		c.Eth1Data = new(Eth1Data)
+	}
+	if dst, err = c.Eth1Data.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+
+	// Field 2: Graffiti
+	if len(c.Graffiti) != 32 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.Graffiti...)
+
+	// Field 3: ProposerSlashings
+	dst = ssz.WriteOffset(dst, offset)
+	offset += len(c.ProposerSlashings) * 416
+
+	// Field 4: AttesterSlashings
+	dst = ssz.WriteOffset(dst, offset)
+	offset += func() int {
+		s := 0
+		for _, o := range c.AttesterSlashings {
+			s += 4
+			s += o.SizeSSZ()
+		}
+		return s
+	}()
+
+	// Field 5: Attestations
+	dst = ssz.WriteOffset(dst, offset)
+	offset += func() int {
+		s := 0
+		for _, o := range c.Attestations {
+			s += 4
+			s += o.SizeSSZ()
+		}
+		return s
+	}()
+
+	// Field 6: Deposits
+	dst = ssz.WriteOffset(dst, offset)
+	offset += len(c.Deposits) * 1240
+
+	// Field 7: VoluntaryExits
+	dst = ssz.WriteOffset(dst, offset)
+	offset += len(c.VoluntaryExits) * 112
+
+	// Field 8: SyncCommitteeBits
+	if len([]byte(c.SyncCommitteeBits)) != 64 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, []byte(c.SyncCommitteeBits)...)
+
+	// Field 9: SyncCommitteeSignature
+	if len(c.SyncCommitteeSignature) != 96 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.SyncCommitteeSignature...)
+
+	// Field 3: ProposerSlashings
+	if len(c.ProposerSlashings) > 16 {
+		return nil, ssz.ErrListTooBig
+	}
+	for _, o := range c.ProposerSlashings {
+		if dst, err = o.MarshalSSZTo(dst); err != nil {
+			return nil, err
+		}
+	}
+
+	// Field 4: AttesterSlashings
+	if len(c.AttesterSlashings) > 2 {
+		return nil, ssz.ErrListTooBig
+	}
+	{
+		offset = 4 * len(c.AttesterSlashings)
+		for _, o := range c.AttesterSlashings {
+			dst = ssz.WriteOffset(dst, offset)
+			offset += o.SizeSSZ()
+		}
+	}
+	for _, o := range c.AttesterSlashings {
+		if dst, err = o.MarshalSSZTo(dst); err != nil {
+			return nil, err
+		}
+	}
+
+	// Field 5: Attestations
+	if len(c.Attestations) > 128 {
+		return nil, ssz.ErrListTooBig
+	}
+	{
+		offset = 4 * len(c.Attestations)
+		for _, o := range c.Attestations {
+			dst = ssz.WriteOffset(dst, offset)
+			offset += o.SizeSSZ()
+		}
+	}
+	for _, o := range c.Attestations {
+		if dst, err = o.MarshalSSZTo(dst); err != nil {
+			return nil, err
+		}
+	}
+
+	// Field 6: Deposits
+	if len(c.Deposits) > 16 {
+		return nil, ssz.ErrListTooBig
+	}
+	for _, o := range c.Deposits {
+		if dst, err = o.MarshalSSZTo(dst); err != nil {
+			return nil, err
+		}
+	}
+
+	// Field 7: VoluntaryExits
+	if len(c.VoluntaryExits) > 16 {
+		return nil, ssz.ErrListTooBig
+	}
+	for _, o := range c.VoluntaryExits {
+		if dst, err = o.MarshalSSZTo(dst); err != nil {
+			return nil, err
+		}
+	}
+	return dst, err
+}
+func (c *BeaconBlockBodyV1) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size < 380 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:96]    // c.RandaoReveal
+	s1 := buf[96:168]  // c.Eth1Data
+	s2 := buf[168:200] // c.Graffiti
+	s8 := buf[220:284] // c.SyncCommitteeBits
+	s9 := buf[284:380] // c.SyncCommitteeSignature
+
+	v3 := ssz.ReadOffset(buf[200:204]) // c.ProposerSlashings
+	if v3 < 380 {
+		return ssz.ErrInvalidVariableOffset
+	}
+	if v3 > size {
+		return ssz.ErrOffset
+	}
+	v4 := ssz.ReadOffset(buf[204:208]) // c.AttesterSlashings
+	if v4 > size || v4 < v3 {
+		return ssz.ErrOffset
+	}
+	v5 := ssz.ReadOffset(buf[208:212]) // c.Attestations
+	if v5 > size || v5 < v4 {
+		return ssz.ErrOffset
+	}
+	v6 := ssz.ReadOffset(buf[212:216]) // c.Deposits
+	if v6 > size || v6 < v5 {
+		return ssz.ErrOffset
+	}
+	v7 := ssz.ReadOffset(buf[216:220]) // c.VoluntaryExits
+	if v7 > size || v7 < v6 {
+		return ssz.ErrOffset
+	}
+	s3 := buf[v3:v4] // c.ProposerSlashings
+	s4 := buf[v4:v5] // c.AttesterSlashings
+	s5 := buf[v5:v6] // c.Attestations
+	s6 := buf[v6:v7] // c.Deposits
+	s7 := buf[v7:]   // c.VoluntaryExits
+
+	// Field 0: RandaoReveal
+	c.RandaoReveal = append([]byte{}, s0...)
+
+	// Field 1: Eth1Data
+	c.Eth1Data = new(Eth1Data)
+	if err = c.Eth1Data.UnmarshalSSZ(s1); err != nil {
+		return err
+	}
+
+	// Field 2: Graffiti
+	c.Graffiti = append([]byte{}, s2...)
+
+	// Field 3: ProposerSlashings
+	{
+		if len(s3)%416 != 0 {
+			return fmt.Errorf("misaligned bytes: c.ProposerSlashings length is %d, which is not a multiple of 416", len(s3))
+		}
+		numElem := len(s3) / 416
+		if numElem > 16 {
+			return fmt.Errorf("ssz-max exceeded: c.ProposerSlashings has %d elements, ssz-max is 16", numElem)
+		}
+		for i := 0; i < numElem; i++ {
+			var tmp *ProposerSlashing
+			tmp = new(ProposerSlashing)
+			tmpSlice := s3[i*416 : (1+i)*416]
+			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+				return err
+			}
+			c.ProposerSlashings = append(c.ProposerSlashings, tmp)
+		}
+	}
+
+	// Field 4: AttesterSlashings
+	{
+		// empty lists are zero length, so make sure there is room for an offset
+		// before attempting to unmarshal it
+		if len(s4) > 3 {
+			firstOffset := ssz.ReadOffset(s4[0:4])
+			if firstOffset%4 != 0 {
+				return fmt.Errorf("misaligned list bytes: when decoding c.AttesterSlashings, end-of-list offset is %d, which is not a multiple of 4 (offset size)", firstOffset)
+			}
+			listLen := firstOffset / 4
+			if listLen > 2 {
+				return fmt.Errorf("ssz-max exceeded: c.AttesterSlashings has %d elements, ssz-max is 2", listLen)
+			}
+			listOffsets := make([]uint64, listLen)
+			for i := 0; uint64(i) < listLen; i++ {
+				listOffsets[i] = ssz.ReadOffset(s4[i*4 : (i+1)*4])
+			}
+			for i := 0; i < len(listOffsets); i++ {
+				var tmp *AttesterSlashing
+				tmp = new(AttesterSlashing)
+				var tmpSlice []byte
+				if i+1 == len(listOffsets) {
+					tmpSlice = s4[listOffsets[i]:]
+				} else {
+					tmpSlice = s4[listOffsets[i]:listOffsets[i+1]]
+				}
+				if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+					return err
+				}
+				c.AttesterSlashings = append(c.AttesterSlashings, tmp)
+			}
+		}
+	}
+
+	// Field 5: Attestations
+	{
+		// empty lists are zero length, so make sure there is room for an offset
+		// before attempting to unmarshal it
+		if len(s5) > 3 {
+			firstOffset := ssz.ReadOffset(s5[0:4])
+			if firstOffset%4 != 0 {
+				return fmt.Errorf("misaligned list bytes: when decoding c.Attestations, end-of-list offset is %d, which is not a multiple of 4 (offset size)", firstOffset)
+			}
+			listLen := firstOffset / 4
+			if listLen > 128 {
+				return fmt.Errorf("ssz-max exceeded: c.Attestations has %d elements, ssz-max is 128", listLen)
+			}
+			listOffsets := make([]uint64, listLen)
+			for i := 0; uint64(i) < listLen; i++ {
+				listOffsets[i] = ssz.ReadOffset(s5[i*4 : (i+1)*4])
+			}
+			for i := 0; i < len(listOffsets); i++ {
+				var tmp *Attestation
+				tmp = new(Attestation)
+				var tmpSlice []byte
+				if i+1 == len(listOffsets) {
+					tmpSlice = s5[listOffsets[i]:]
+				} else {
+					tmpSlice = s5[listOffsets[i]:listOffsets[i+1]]
+				}
+				if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+					return err
+				}
+				c.Attestations = append(c.Attestations, tmp)
+			}
+		}
+	}
+
+	// Field 6: Deposits
+	{
+		if len(s6)%1240 != 0 {
+			return fmt.Errorf("misaligned bytes: c.Deposits length is %d, which is not a multiple of 1240", len(s6))
+		}
+		numElem := len(s6) / 1240
+		if numElem > 16 {
+			return fmt.Errorf("ssz-max exceeded: c.Deposits has %d elements, ssz-max is 16", numElem)
+		}
+		for i := 0; i < numElem; i++ {
+			var tmp *Deposit
+			tmp = new(Deposit)
+			tmpSlice := s6[i*1240 : (1+i)*1240]
+			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+				return err
+			}
+			c.Deposits = append(c.Deposits, tmp)
+		}
+	}
+
+	// Field 7: VoluntaryExits
+	{
+		if len(s7)%112 != 0 {
+			return fmt.Errorf("misaligned bytes: c.VoluntaryExits length is %d, which is not a multiple of 112", len(s7))
+		}
+		numElem := len(s7) / 112
+		if numElem > 16 {
+			return fmt.Errorf("ssz-max exceeded: c.VoluntaryExits has %d elements, ssz-max is 16", numElem)
+		}
+		for i := 0; i < numElem; i++ {
+			var tmp *SignedVoluntaryExit
+			tmp = new(SignedVoluntaryExit)
+			tmpSlice := s7[i*112 : (1+i)*112]
+			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+				return err
+			}
+			c.VoluntaryExits = append(c.VoluntaryExits, tmp)
+		}
+	}
+
+	// Field 8: SyncCommitteeBits
+	c.SyncCommitteeBits = append([]byte{}, prysmaticlabs_go_bitfield.Bitvector512(s8)...)
+
+	// Field 9: SyncCommitteeSignature
+	c.SyncCommitteeSignature = append([]byte{}, s9...)
+	return err
+}
+func (c *Checkpoint) XXSizeSSZ() int {
+	size := 40
+
+	return size
+}
+func (c *Checkpoint) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *Checkpoint) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field 0: Epoch
+	dst = ssz.MarshalUint64(dst, uint64(c.Epoch))
+
+	// Field 1: Root
+	if len(c.Root) != 32 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.Root...)
+
+	return dst, err
+}
+func (c *Checkpoint) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 40 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:8]  // c.Epoch
+	s1 := buf[8:40] // c.Root
+
+	// Field 0: Epoch
+	c.Epoch = prysmaticlabs_eth2_types.Epoch(ssz.UnmarshallUint64(s0))
+
+	// Field 1: Root
+	c.Root = append([]byte{}, s1...)
+	return err
+}
+func (c *Deposit) XXSizeSSZ() int {
+	size := 1240
+
+	return size
+}
+func (c *Deposit) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *Deposit) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field 0: Proof
+	if len(c.Proof) != 33 {
+		return nil, ssz.ErrBytesLength
+	}
+	for _, o := range c.Proof {
+		if len(o) != 32 {
+			return nil, ssz.ErrBytesLength
+		}
+		dst = append(dst, o...)
+	}
+
+	// Field 1: Data
+	if c.Data == nil {
+		c.Data = new(Deposit_Data)
+	}
+	if dst, err = c.Data.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+
+	return dst, err
+}
+func (c *Deposit) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 1240 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:1056]    // c.Proof
+	s1 := buf[1056:1240] // c.Data
+
+	// Field 0: Proof
+	{
+		var tmp []byte
+		for i := 0; i < 33; i++ {
+			tmpSlice := s0[i*32 : (1+i)*32]
+			tmp = append([]byte{}, tmpSlice...)
+			c.Proof = append(c.Proof, tmp)
+		}
+	}
+
+	// Field 1: Data
+	c.Data = new(Deposit_Data)
+	if err = c.Data.UnmarshalSSZ(s1); err != nil {
+		return err
+	}
+	return err
+}
+func (c *Eth1Data) XXSizeSSZ() int {
+	size := 72
+
+	return size
+}
+func (c *Eth1Data) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *Eth1Data) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field 0: DepositRoot
+	if len(c.DepositRoot) != 32 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.DepositRoot...)
+
+	// Field 1: DepositCount
+	dst = ssz.MarshalUint64(dst, c.DepositCount)
+
+	// Field 2: BlockHash
+	if len(c.BlockHash) != 32 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.BlockHash...)
+
+	return dst, err
+}
+func (c *Eth1Data) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 72 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:32]  // c.DepositRoot
+	s1 := buf[32:40] // c.DepositCount
+	s2 := buf[40:72] // c.BlockHash
+
+	// Field 0: DepositRoot
+	c.DepositRoot = append([]byte{}, s0...)
+
+	// Field 1: DepositCount
+	c.DepositCount = ssz.UnmarshallUint64(s1)
+
+	// Field 2: BlockHash
+	c.BlockHash = append([]byte{}, s2...)
+	return err
+}
+func (c *IndexedAttestation) XXSizeSSZ() int {
+	size := 228
+	size += len(c.AttestingIndices) * 8
+	return size
+}
+func (c *IndexedAttestation) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *IndexedAttestation) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+	offset := 228
+
+	// Field 0: AttestingIndices
+	dst = ssz.WriteOffset(dst, offset)
+	offset += len(c.AttestingIndices) * 8
+
+	// Field 1: Data
+	if c.Data == nil {
+		c.Data = new(AttestationData)
+	}
+	if dst, err = c.Data.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+
+	// Field 2: Signature
+	if len(c.Signature) != 96 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.Signature...)
+
+	// Field 0: AttestingIndices
+	if len(c.AttestingIndices) > 2048 {
+		return nil, ssz.ErrListTooBig
+	}
+	for _, o := range c.AttestingIndices {
+		dst = ssz.MarshalUint64(dst, o)
+	}
+	return dst, err
+}
+func (c *IndexedAttestation) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size < 228 {
+		return ssz.ErrSize
+	}
+
+	s1 := buf[4:132]   // c.Data
+	s2 := buf[132:228] // c.Signature
+
+	v0 := ssz.ReadOffset(buf[0:4]) // c.AttestingIndices
+	if v0 < 228 {
+		return ssz.ErrInvalidVariableOffset
+	}
+	if v0 > size {
+		return ssz.ErrOffset
+	}
+	s0 := buf[v0:] // c.AttestingIndices
+
+	// Field 0: AttestingIndices
+	{
+		if len(s0)%8 != 0 {
+			return fmt.Errorf("misaligned bytes: c.AttestingIndices length is %d, which is not a multiple of 8", len(s0))
+		}
+		numElem := len(s0) / 8
+		if numElem > 2048 {
+			return fmt.Errorf("ssz-max exceeded: c.AttestingIndices has %d elements, ssz-max is 2048", numElem)
+		}
+		for i := 0; i < numElem; i++ {
+			var tmp uint64
+
+			tmpSlice := s0[i*8 : (1+i)*8]
+			tmp = ssz.UnmarshallUint64(tmpSlice)
+			c.AttestingIndices = append(c.AttestingIndices, tmp)
+		}
+	}
+
+	// Field 1: Data
+	c.Data = new(AttestationData)
+	if err = c.Data.UnmarshalSSZ(s1); err != nil {
+		return err
+	}
+
+	// Field 2: Signature
+	c.Signature = append([]byte{}, s2...)
+	return err
+}
+func (c *ProposerSlashing) XXSizeSSZ() int {
+	size := 416
+
+	return size
+}
+func (c *ProposerSlashing) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *ProposerSlashing) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field 0: SignedHeader_1
+	if c.SignedHeader_1 == nil {
+		c.SignedHeader_1 = new(SignedBeaconBlockHeader)
+	}
+	if dst, err = c.SignedHeader_1.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+
+	// Field 1: SignedHeader_2
+	if c.SignedHeader_2 == nil {
+		c.SignedHeader_2 = new(SignedBeaconBlockHeader)
+	}
+	if dst, err = c.SignedHeader_2.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+
+	return dst, err
+}
+func (c *ProposerSlashing) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 416 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:208]   // c.SignedHeader_1
+	s1 := buf[208:416] // c.SignedHeader_2
+
+	// Field 0: SignedHeader_1
+	c.SignedHeader_1 = new(SignedBeaconBlockHeader)
+	if err = c.SignedHeader_1.UnmarshalSSZ(s0); err != nil {
+		return err
+	}
+
+	// Field 1: SignedHeader_2
+	c.SignedHeader_2 = new(SignedBeaconBlockHeader)
+	if err = c.SignedHeader_2.UnmarshalSSZ(s1); err != nil {
+		return err
+	}
+	return err
+}
+func (c *SignedAggregateAttestationAndProof) XXSizeSSZ() int {
+	size := 100
+	if c.Message == nil {
+		c.Message = new(AggregateAttestationAndProof)
+	}
+	size += c.Message.SizeSSZ()
+	return size
+}
+func (c *SignedAggregateAttestationAndProof) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *SignedAggregateAttestationAndProof) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+	offset := 100
+
+	// Field 0: Message
+	if c.Message == nil {
+		c.Message = new(AggregateAttestationAndProof)
+	}
+	dst = ssz.WriteOffset(dst, offset)
+	offset += c.Message.SizeSSZ()
+
+	// Field 1: Signature
+	if len(c.Signature) != 96 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.Signature...)
+
+	// Field 0: Message
+	if dst, err = c.Message.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+	return dst, err
+}
+func (c *SignedAggregateAttestationAndProof) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size < 100 {
+		return ssz.ErrSize
+	}
+
+	s1 := buf[4:100] // c.Signature
+
+	v0 := ssz.ReadOffset(buf[0:4]) // c.Message
+	if v0 < 100 {
+		return ssz.ErrInvalidVariableOffset
+	}
+	if v0 > size {
+		return ssz.ErrOffset
+	}
+	s0 := buf[v0:] // c.Message
+
+	// Field 0: Message
+	c.Message = new(AggregateAttestationAndProof)
+	if err = c.Message.UnmarshalSSZ(s0); err != nil {
+		return err
+	}
+
+	// Field 1: Signature
+	c.Signature = append([]byte{}, s1...)
+	return err
+}
+func (c *SignedBeaconBlock) XXSizeSSZ() int {
+	size := 100
+	if c.Block == nil {
+		c.Block = new(BeaconBlock)
+	}
+	size += c.Block.SizeSSZ()
+	return size
+}
+func (c *SignedBeaconBlock) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *SignedBeaconBlock) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+	offset := 100
+
+	// Field 0: Block
+	if c.Block == nil {
+		c.Block = new(BeaconBlock)
+	}
+	dst = ssz.WriteOffset(dst, offset)
+	offset += c.Block.SizeSSZ()
+
+	// Field 1: Signature
+	if len(c.Signature) != 96 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.Signature...)
+
+	// Field 0: Block
+	if dst, err = c.Block.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+	return dst, err
+}
+func (c *SignedBeaconBlock) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size < 100 {
+		return ssz.ErrSize
+	}
+
+	s1 := buf[4:100] // c.Signature
+
+	v0 := ssz.ReadOffset(buf[0:4]) // c.Block
+	if v0 < 100 {
+		return ssz.ErrInvalidVariableOffset
+	}
+	if v0 > size {
+		return ssz.ErrOffset
+	}
+	s0 := buf[v0:] // c.Block
+
+	// Field 0: Block
+	c.Block = new(BeaconBlock)
+	if err = c.Block.UnmarshalSSZ(s0); err != nil {
+		return err
+	}
+
+	// Field 1: Signature
+	c.Signature = append([]byte{}, s1...)
+	return err
+}
+func (c *SignedBeaconBlockV1) XXSizeSSZ() int {
+	size := 100
+	if c.Block == nil {
+		c.Block = new(BeaconBlockV1)
+	}
+	size += c.Block.SizeSSZ()
+	return size
+}
+func (c *SignedBeaconBlockV1) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *SignedBeaconBlockV1) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+	offset := 100
+
+	// Field 0: Block
+	if c.Block == nil {
+		c.Block = new(BeaconBlockV1)
+	}
+	dst = ssz.WriteOffset(dst, offset)
+	offset += c.Block.SizeSSZ()
+
+	// Field 1: Signature
+	if len(c.Signature) != 96 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.Signature...)
+
+	// Field 0: Block
+	if dst, err = c.Block.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+	return dst, err
+}
+func (c *SignedBeaconBlockV1) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size < 100 {
+		return ssz.ErrSize
+	}
+
+	s1 := buf[4:100] // c.Signature
+
+	v0 := ssz.ReadOffset(buf[0:4]) // c.Block
+	if v0 < 100 {
+		return ssz.ErrInvalidVariableOffset
+	}
+	if v0 > size {
+		return ssz.ErrOffset
+	}
+	s0 := buf[v0:] // c.Block
+
+	// Field 0: Block
+	c.Block = new(BeaconBlockV1)
+	if err = c.Block.UnmarshalSSZ(s0); err != nil {
+		return err
+	}
+
+	// Field 1: Signature
+	c.Signature = append([]byte{}, s1...)
+	return err
+}
+func (c *SignedBeaconBlockHeader) XXSizeSSZ() int {
+	size := 208
+
+	return size
+}
+func (c *SignedBeaconBlockHeader) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *SignedBeaconBlockHeader) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field 0: Message
+	if c.Message == nil {
+		c.Message = new(BeaconBlockHeader)
+	}
+	if dst, err = c.Message.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+
+	// Field 1: Signature
+	if len(c.Signature) != 96 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.Signature...)
+
+	return dst, err
+}
+func (c *SignedBeaconBlockHeader) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 208 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:112]   // c.Message
+	s1 := buf[112:208] // c.Signature
+
+	// Field 0: Message
+	c.Message = new(BeaconBlockHeader)
+	if err = c.Message.UnmarshalSSZ(s0); err != nil {
+		return err
+	}
+
+	// Field 1: Signature
+	c.Signature = append([]byte{}, s1...)
+	return err
+}
+func (c *SignedVoluntaryExit) XXSizeSSZ() int {
+	size := 112
+
+	return size
+}
+func (c *SignedVoluntaryExit) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *SignedVoluntaryExit) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field 0: Message
+	if c.Message == nil {
+		c.Message = new(VoluntaryExit)
+	}
+	if dst, err = c.Message.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+
+	// Field 1: Signature
+	if len(c.Signature) != 96 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.Signature...)
+
+	return dst, err
+}
+func (c *SignedVoluntaryExit) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 112 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:16]   // c.Message
+	s1 := buf[16:112] // c.Signature
+
+	// Field 0: Message
+	c.Message = new(VoluntaryExit)
+	if err = c.Message.UnmarshalSSZ(s0); err != nil {
+		return err
+	}
+
+	// Field 1: Signature
+	c.Signature = append([]byte{}, s1...)
+	return err
+}
+func (c *Validator) XXSizeSSZ() int {
+	size := 121
+
+	return size
+}
+func (c *Validator) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *Validator) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field 0: Pubkey
+	if len(c.Pubkey) != 48 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.Pubkey...)
+
+	// Field 1: WithdrawalCredentials
+	if len(c.WithdrawalCredentials) != 32 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.WithdrawalCredentials...)
+
+	// Field 2: EffectiveBalance
+	dst = ssz.MarshalUint64(dst, c.EffectiveBalance)
+
+	// Field 3: Slashed
+	dst = ssz.MarshalBool(dst, c.Slashed)
+
+	// Field 4: ActivationEligibilityEpoch
+	dst = ssz.MarshalUint64(dst, uint64(c.ActivationEligibilityEpoch))
+
+	// Field 5: ActivationEpoch
+	dst = ssz.MarshalUint64(dst, uint64(c.ActivationEpoch))
+
+	// Field 6: ExitEpoch
+	dst = ssz.MarshalUint64(dst, uint64(c.ExitEpoch))
+
+	// Field 7: WithdrawableEpoch
+	dst = ssz.MarshalUint64(dst, uint64(c.WithdrawableEpoch))
+
+	return dst, err
+}
+func (c *Validator) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 121 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:48]    // c.Pubkey
+	s1 := buf[48:80]   // c.WithdrawalCredentials
+	s2 := buf[80:88]   // c.EffectiveBalance
+	s3 := buf[88:89]   // c.Slashed
+	s4 := buf[89:97]   // c.ActivationEligibilityEpoch
+	s5 := buf[97:105]  // c.ActivationEpoch
+	s6 := buf[105:113] // c.ExitEpoch
+	s7 := buf[113:121] // c.WithdrawableEpoch
+
+	// Field 0: Pubkey
+	c.Pubkey = append([]byte{}, s0...)
+
+	// Field 1: WithdrawalCredentials
+	c.WithdrawalCredentials = append([]byte{}, s1...)
+
+	// Field 2: EffectiveBalance
+	c.EffectiveBalance = ssz.UnmarshallUint64(s2)
+
+	// Field 3: Slashed
+	c.Slashed = ssz.UnmarshalBool(s3)
+
+	// Field 4: ActivationEligibilityEpoch
+	c.ActivationEligibilityEpoch = prysmaticlabs_eth2_types.Epoch(ssz.UnmarshallUint64(s4))
+
+	// Field 5: ActivationEpoch
+	c.ActivationEpoch = prysmaticlabs_eth2_types.Epoch(ssz.UnmarshallUint64(s5))
+
+	// Field 6: ExitEpoch
+	c.ExitEpoch = prysmaticlabs_eth2_types.Epoch(ssz.UnmarshallUint64(s6))
+
+	// Field 7: WithdrawableEpoch
+	c.WithdrawableEpoch = prysmaticlabs_eth2_types.Epoch(ssz.UnmarshallUint64(s7))
+	return err
+}
+func (c *VoluntaryExit) XXSizeSSZ() int {
+	size := 16
+
+	return size
+}
+func (c *VoluntaryExit) XXMarshalSSZ() ([]byte, error) {
+	return ssz.MarshalSSZ(c)
+}
+
+func (c *VoluntaryExit) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field 0: Epoch
+	dst = ssz.MarshalUint64(dst, uint64(c.Epoch))
+
+	// Field 1: ValidatorIndex
+	dst = ssz.MarshalUint64(dst, uint64(c.ValidatorIndex))
+
+	return dst, err
+}
+func (c *VoluntaryExit) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 16 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:8]  // c.Epoch
+	s1 := buf[8:16] // c.ValidatorIndex
+
+	// Field 0: Epoch
+	c.Epoch = prysmaticlabs_eth2_types.Epoch(ssz.UnmarshallUint64(s0))
+
+	// Field 1: ValidatorIndex
+	c.ValidatorIndex = prysmaticlabs_eth2_types.ValidatorIndex(ssz.UnmarshallUint64(s1))
+	return err
+}

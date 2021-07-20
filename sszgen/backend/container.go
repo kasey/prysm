@@ -16,13 +16,6 @@ type generateContainer struct {
 	targetPackage string
 }
 
-var generateMarshalValueContainerTmpl = `if {{.FieldName}} == nil {
-	{{.FieldName}} = new({{.TypeName}})
-}
-if dst, err = {{.FieldName}}.MarshalSSZTo(dst); err != nil {
-	return nil, err
-}`
-
 func (g *generateContainer) generateUnmarshalValue(fieldName string, sliceName string) string {
 	t := `if err = %s.UnmarshalSSZ(%s); err != nil {
 		return err
@@ -31,27 +24,25 @@ func (g *generateContainer) generateUnmarshalValue(fieldName string, sliceName s
 }
 
 func (g *generateContainer) generateFixedMarshalValue(fieldName string) string {
-	tmpl, err := template.New("generateMarshalValueContainerTmpl").Parse(generateMarshalValueContainerTmpl)
-	if err != nil {
-		panic(err)
+	if g.IsVariableSized() {
+		return fmt.Sprintf(`dst = ssz.WriteOffset(dst, offset)
+offset += %s.SizeSSZ()`, fieldName)
 	}
-	buf := bytes.NewBuffer(nil)
-	typeName := g.TypeName()
-	if g.targetPackage != g.PackagePath() {
-		typeName = fmt.Sprintf("%s.%s", importAlias(g.PackagePath()), g.TypeName())
-	}
-	tmpl.Execute(buf, struct{
-		FieldName string
-		TypeName string
-	}{
-		FieldName: fieldName,
-		TypeName: typeName,
-	})
-	return string(buf.Bytes())
+	return g.generateDelegateFieldMarshalSSZ(fieldName)
+}
+
+var generateMarshalValueContainerTmpl = `
+`
+
+// method that generates code which calls the MarshalSSZ method of the field
+func (g *generateContainer) generateDelegateFieldMarshalSSZ(fieldName string) string {
+	return fmt.Sprintf(`if dst, err = %s.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}`, fieldName)
 }
 
 func (g *generateContainer) generateVariableMarshalValue(fieldName string) string {
-	return g.generateFixedMarshalValue(fieldName)
+	return g.generateDelegateFieldMarshalSSZ(fieldName)
 }
 
 func (g *generateContainer) variableSizeSSZ(fieldName string) string {
@@ -72,13 +63,23 @@ func (g *generateContainer) GenerateSizeSSZ() *generatedCode {
 	}
 	buf := bytes.NewBuffer(nil)
 
+	fixedSize := 0
 	variableComputations := make([]string, 0)
 	for _, c := range g.Contents {
 		vg := newValueGenerator(c.Value, g.targetPackage)
+		fixedSize += c.Value.FixedSize()
 		if !c.Value.IsVariableSized() {
 			continue
 		}
-		cv := vg.variableSizeSSZ(fmt.Sprintf("%s.%s", receiverName, c.Key))
+		fieldName := fmt.Sprintf("%s.%s", receiverName, c.Key)
+		vi, ok := vg.(valueInitializer)
+		if ok {
+			ini := vi.initializeValue(fieldName)
+			if ini != "" {
+				variableComputations = append(variableComputations, fmt.Sprintf("if %s == nil {\n\t%s = %s\n}", fieldName, fieldName, ini))
+			}
+		}
+		cv := vg.variableSizeSSZ(fieldName)
 		if cv != "" {
 			variableComputations = append(variableComputations, fmt.Sprintf("\tsize += %s", cv))
 		}
@@ -92,7 +93,7 @@ func (g *generateContainer) GenerateSizeSSZ() *generatedCode {
 	}{
 		Receiver: receiverName,
 		Type: fmt.Sprintf("*%s", g.TypeName()),
-		FixedSize: g.FixedSize(),
+		FixedSize: fixedSize,
 		VariableSize: "\n" + strings.Join(variableComputations, "\n"),
 	})
 	return &generatedCode{
@@ -122,23 +123,26 @@ func (g *generateContainer) GenerateMarshalSSZ() *generatedCode {
 
 	marshalValueBlocks := make([]string, 0)
 	marshalVariableValueBlocks := make([]string, 0)
-	// only set the offset declaration if we need it
-	// otherwise we'll have an unused variable (syntax error)
-	offsetDeclaration := ""
+	offset := 0
 	for i, c := range g.Contents {
 		// only lists need the offset variable
-		if containsList(c.Value) {
-			offsetDeclaration = fmt.Sprintf("\noffset := %d\n", g.FixedSize())
-		}
 		mg := newValueGenerator(c.Value, g.targetPackage)
 		fieldName := fmt.Sprintf("%s.%s", receiverName, c.Key)
-		mv := mg.generateFixedMarshalValue(fieldName)
 		marshalValueBlocks = append(marshalValueBlocks, fmt.Sprintf("\n\t// Field %d: %s", i, c.Key))
+		vi, ok := mg.(valueInitializer)
+		if ok {
+			ini := vi.initializeValue(fieldName)
+			if ini != "" {
+				marshalValueBlocks = append(marshalValueBlocks , fmt.Sprintf("if %s == nil {\n\t%s = %s\n}", fieldName, fieldName, ini))
+			}
+		}
+		mv := mg.generateFixedMarshalValue(fieldName)
 		marshalValueBlocks = append(marshalValueBlocks, "\t" + mv)
+		offset += c.Value.FixedSize()
 		if !c.Value.IsVariableSized() {
 			continue
 		}
-		_, ok := mg.(variableMarshaller)
+		_, ok = mg.(variableMarshaller)
 		if !ok {
 			continue
 		}
@@ -149,18 +153,24 @@ func (g *generateContainer) GenerateMarshalSSZ() *generatedCode {
 			marshalVariableValueBlocks = append(marshalVariableValueBlocks, "\t" + vmc)
 		}
 	}
+	// only set the offset declaration if we need it
+	// otherwise we'll have an unused variable (syntax error)
+	offsetDeclaration := ""
+	if g.IsVariableSized() {
+		// if there are any variable sized values in the container, we'll need to set this offset declaration
+		// so it gets rendered to the top of the marshal method
+		offsetDeclaration = fmt.Sprintf("\noffset := %d\n", offset)
+	}
 
 	sizeTmpl.Execute(buf, struct{
 		Receiver string
 		Type string
-		FixedSize int
 		OffsetDeclaration string
 		ValueMarshaling string
 		VariableValueMarshaling string
 	}{
 		Receiver: receiverName,
 		Type: fmt.Sprintf("*%s", g.TypeName()),
-		FixedSize: g.FixedSize(),
 		OffsetDeclaration: offsetDeclaration,
 		ValueMarshaling: "\n" + strings.Join(marshalValueBlocks, "\n"),
 		VariableValueMarshaling: "\n" + strings.Join(marshalVariableValueBlocks, "\n"),
@@ -174,49 +184,111 @@ func (g *generateContainer) GenerateMarshalSSZ() *generatedCode {
 var generateUnmarshalSSZTmpl = `func ({{.Receiver}} {{.Type}}) XXUnmarshalSSZ(buf []byte) error {
 	var err error
 	size := uint64(len(buf))
-	if size {{ .SizeInequality }} {{ .FixedSize }} {
+	if size {{ .SizeInequality }} {{ .FixedOffset }} {
 		return ssz.ErrSize
 	}
 
 	{{ .SliceDeclaration }}
-	{{ .VariableOffsetDeclarations }}
-	{{ .VariableOffsetValidation }}
-	{{ .VariableSliceDeclarations }}
 {{ .ValueUnmarshaling }}
 	return err
 }`
+
+type unmarshalStep struct {
+	valRep types.ValRep
+	fieldNumber int
+	fieldName string
+	beginByte int
+	endByte int
+	previousVariable *unmarshalStep
+	nextVariable *unmarshalStep
+}
+
+type unmarshalStepSlice []*unmarshalStep
+
+func (us *unmarshalStep) fixedSize() int {
+	return us.valRep.FixedSize()
+}
+
+func (us *unmarshalStep) variableOffset(outerFixedSize int) string {
+	o := fmt.Sprintf("v%d := ssz.ReadOffset(buf[%d:%d]) // %s", us.fieldNumber, us.beginByte, us.endByte, us.fieldName)
+	if us.previousVariable == nil {
+		o += fmt.Sprintf("\nif v%d < %d {\n\treturn ssz.ErrInvalidVariableOffset\n}", us.fieldNumber, outerFixedSize)
+		o += fmt.Sprintf("\nif v%d > size {\n\treturn ssz.ErrOffset\n}", us.fieldNumber)
+	} else {
+		o += fmt.Sprintf("\nif v%d > size || v%d < v%d {\n\treturn ssz.ErrOffset\n}", us.fieldNumber, us.fieldNumber, us.previousVariable.fieldNumber)
+	}
+	return o
+}
+
+func (us *unmarshalStep) slice() string {
+	if us.valRep.IsVariableSized() {
+		if us.nextVariable == nil {
+			return fmt.Sprintf("s%d := buf[v%d:]\t\t// %s", us.fieldNumber, us.fieldNumber, us.fieldName)
+		}
+		return fmt.Sprintf("s%d := buf[v%d:v%d]\t\t// %s", us.fieldNumber, us.fieldNumber, us.nextVariable.fieldNumber, us.fieldName)
+	}
+	return fmt.Sprintf("s%d := buf[%d:%d]\t\t// %s", us.fieldNumber, us.beginByte, us.endByte, us.fieldName)
+}
+
+func (steps unmarshalStepSlice) fixedSlices() string {
+	slices := make([]string, 0)
+	for _, s := range steps {
+		if s.valRep.IsVariableSized() {
+			continue
+		}
+		slices = append(slices, s.slice())
+	}
+	return strings.Join(slices, "\n")
+}
+
+func (steps unmarshalStepSlice)  variableSlices(outerSize int) string {
+	validate := make([]string, 0)
+	assign := make([]string, 0)
+	for _, s := range steps {
+		if !s.valRep.IsVariableSized() {
+			continue
+		}
+		validate = append(validate, s.variableOffset(outerSize))
+		assign = append(assign, s.slice())
+	}
+	return strings.Join(append(validate, assign...), "\n")
+}
+
+func (g *generateContainer) unmarshalSteps() unmarshalStepSlice{
+	ums := make([]*unmarshalStep, 0)
+	var begin, end int
+	var prevVariable *unmarshalStep
+	for i, c := range g.Contents {
+		begin = end
+		end += c.Value.FixedSize()
+		um := &unmarshalStep{
+			valRep: c.Value,
+			fieldNumber: i,
+			fieldName: fmt.Sprintf("%s.%s", receiverName, c.Key),
+			beginByte: begin,
+			endByte: end,
+		}
+		if c.Value.IsVariableSized() {
+			if prevVariable != nil {
+				um.previousVariable = prevVariable
+				prevVariable.nextVariable = um
+			}
+			prevVariable = um
+		}
+
+		ums = append(ums, um)
+	}
+	return ums
+}
 
 func (g *generateContainer) GenerateUnmarshalSSZ() *generatedCode {
 	sizeInequality := "!="
 	if g.IsVariableSized() {
 		sizeInequality = "<"
 	}
-	//unmarshalVariableBlocks := make([]string, 0)
-	offsets := make([]string, len(g.Contents))
-	validations := make([]string, 0)
+	ums := g.unmarshalSteps()
 	unmarshalBlocks := make([]string, 0)
-	begin := 0
-	end := 0
-	slices := make([]string, 0)
-	variableOffsets := make([]int, 0)
 	for i, c := range g.Contents {
-		begin = end
-		end += c.Value.FixedSize()
-		sliceName := fmt.Sprintf("s%d", i)
-		if c.Value.IsVariableSized() {
-			offsets = append(offsets, fmt.Sprintf("v%d := ssz.ReadOffset(buf[%d:%d])", i, begin, end))
-			var prevBoundCheck string
-			if len(variableOffsets) == 0 {
-				validations = append(validations, fmt.Sprintf("if v%d < %d {\n\treturn ssz.ErrInvalidVariableOffset\n}", i, g.FixedSize()))
-			} else {
-				prevBoundCheck = fmt.Sprintf("|| v%d > v%d", variableOffsets[len(variableOffsets)-1], i)
-			}
-			validations = append(validations, fmt.Sprintf("if v%d > size %s{\n\treturn ssz.ErrOffset\n}", i, prevBoundCheck))
-			variableOffsets = append(variableOffsets, i)
-		} else {
-			slices = append(slices, fmt.Sprintf("%s := buf[%d:%d]", sliceName, begin, end))
-		}
-
 		unmarshalBlocks = append(unmarshalBlocks, fmt.Sprintf("\n\t// Field %d: %s", i, c.Key))
 		mg := newValueGenerator(c.Value, g.targetPackage)
 		fieldName := fmt.Sprintf("%s.%s", receiverName, c.Key)
@@ -229,6 +301,7 @@ func (g *generateContainer) GenerateUnmarshalSSZ() *generatedCode {
 			}
 		}
 
+		sliceName := fmt.Sprintf("s%d", i)
 		mv := mg.generateUnmarshalValue(fieldName, sliceName)
 		if mv != "" {
 			//unmarshalBlocks = append(unmarshalBlocks, fmt.Sprintf("\t%s = %s", fieldName, mv))
@@ -252,15 +325,7 @@ func (g *generateContainer) GenerateUnmarshalSSZ() *generatedCode {
 		 */
 	}
 
-	variableSlices := make([]string, 0)
-	for i := 0; i < len(variableOffsets); i++ {
-		current := fmt.Sprintf("v%d", variableOffsets[i])
-		next := ""
-		if i + 1 < len(variableOffsets) {
-			next = fmt.Sprintf("v%d", variableOffsets[i+1])
-		}
-		variableSlices = append(variableSlices , fmt.Sprintf("s%d := buf[%s:%s]", variableOffsets[i], current, next))
-	}
+	sliceDeclarations := strings.Join([]string{ums.fixedSlices(), "", ums.variableSlices(g.fixedOffset())}, "\n")
 	unmTmpl, err := template.New("GenerateUnmarshalSSZTmpl").Parse(generateUnmarshalSSZTmpl)
 	if err != nil {
 		panic(err)
@@ -270,27 +335,29 @@ func (g *generateContainer) GenerateUnmarshalSSZ() *generatedCode {
 		Receiver string
 		Type string
 		SizeInequality string
-		FixedSize int
+		FixedOffset int
 		SliceDeclaration string
-		VariableOffsetDeclarations string
-		VariableOffsetValidation string
-		VariableSliceDeclarations string
 		ValueUnmarshaling string
 	}{
 		Receiver: receiverName,
 		Type: fmt.Sprintf("*%s", g.TypeName()),
 		SizeInequality: sizeInequality,
-		FixedSize: g.FixedSize(),
-		SliceDeclaration: strings.Join(slices, "\n"),
-		VariableOffsetDeclarations: strings.Join(offsets, "\n"),
-		VariableOffsetValidation: strings.Join(validations, "\n"),
-		VariableSliceDeclarations: strings.Join(variableSlices, "\n"),
+		FixedOffset: g.fixedOffset(),
+		SliceDeclaration: sliceDeclarations,
 		ValueUnmarshaling: strings.Join(unmarshalBlocks, "\n"),
 	})
 	return &generatedCode{
 		blocks:  []string{string(buf.Bytes())},
 		imports: extractImportsFromContainerFields(g.Contents, g.targetPackage),
 	}
+}
+
+func (g *generateContainer) fixedOffset() int {
+	offset := 0
+	for _, c := range g.Contents {
+		offset += c.Value.FixedSize()
+	}
+	return offset
 }
 
 func (g *generateContainer) initializeValue(fieldName string) string {
