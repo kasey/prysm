@@ -7,13 +7,85 @@ import (
 	prysmaticlabs_go_bitfield "github.com/prysmaticlabs/go-bitfield"
 )
 
+func (c *AggregateAttestationAndProof) XXSizeSSZ() int {
+	size := 108
+	if c.Aggregate == nil {
+		c.Aggregate = new(Attestation)
+	}
+	size += c.Aggregate.SizeSSZ()
+	return size
+}
+func (c *AggregateAttestationAndProof) XXMarshalSSZ() ([]byte, error) {
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
+}
+
+func (c *AggregateAttestationAndProof) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+	offset := 108
+
+	// Field 0: AggregatorIndex
+	dst = ssz.MarshalUint64(dst, uint64(c.AggregatorIndex))
+
+	// Field 1: Aggregate
+	if c.Aggregate == nil {
+		c.Aggregate = new(Attestation)
+	}
+	dst = ssz.WriteOffset(dst, offset)
+	offset += c.Aggregate.SizeSSZ()
+
+	// Field 2: SelectionProof
+	if len(c.SelectionProof) != 96 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.SelectionProof...)
+
+	// Field 1: Aggregate
+	if dst, err = c.Aggregate.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+	return dst, err
+}
+func (c *AggregateAttestationAndProof) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size < 108 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:8]    // c.AggregatorIndex
+	s2 := buf[12:108] // c.SelectionProof
+
+	v1 := ssz.ReadOffset(buf[8:12]) // c.Aggregate
+	if v1 < 108 {
+		return ssz.ErrInvalidVariableOffset
+	}
+	if v1 > size {
+		return ssz.ErrOffset
+	}
+	s1 := buf[v1:] // c.Aggregate
+
+	// Field 0: AggregatorIndex
+	c.AggregatorIndex = prysmaticlabs_eth2_types.ValidatorIndex(ssz.UnmarshallUint64(s0))
+
+	// Field 1: Aggregate
+	c.Aggregate = new(Attestation)
+	if err = c.Aggregate.UnmarshalSSZ(s1); err != nil {
+		return err
+	}
+
+	// Field 2: SelectionProof
+	c.SelectionProof = append([]byte{}, s2...)
+	return err
+}
 func (c *Attestation) XXSizeSSZ() int {
 	size := 228
 
 	return size
 }
 func (c *Attestation) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *Attestation) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -38,6 +110,11 @@ func (c *Attestation) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	}
 	dst = append(dst, c.Signature...)
 
+	// Field 0: AggregationBits
+	if len(c.AggregationBits) > 2048 {
+		return nil, ssz.ErrListTooBig
+	}
+	dst = append(dst, c.AggregationBits...)
 	return dst, err
 }
 func (c *Attestation) XXUnmarshalSSZ(buf []byte) error {
@@ -81,7 +158,8 @@ func (c *AttestationData) XXSizeSSZ() int {
 	return size
 }
 func (c *AttestationData) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *AttestationData) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -165,7 +243,8 @@ func (c *AttesterSlashing) XXSizeSSZ() int {
 	return size
 }
 func (c *AttesterSlashing) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *AttesterSlashing) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -240,7 +319,8 @@ func (c *BeaconBlock) XXSizeSSZ() int {
 	return size
 }
 func (c *BeaconBlock) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *BeaconBlock) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -318,13 +398,346 @@ func (c *BeaconBlock) XXUnmarshalSSZ(buf []byte) error {
 	}
 	return err
 }
+func (c *BeaconBlockBody) XXSizeSSZ() int {
+	size := 220
+	size += len(c.ProposerSlashings) * 416
+	size += func() int {
+		s := 0
+		for _, o := range c.AttesterSlashings {
+			s += 4
+			s += o.SizeSSZ()
+		}
+		return s
+	}()
+	size += func() int {
+		s := 0
+		for _, o := range c.Attestations {
+			s += 4
+			s += o.SizeSSZ()
+		}
+		return s
+	}()
+	size += len(c.Deposits) * 1240
+	size += len(c.VoluntaryExits) * 112
+	return size
+}
+func (c *BeaconBlockBody) XXMarshalSSZ() ([]byte, error) {
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
+}
+
+func (c *BeaconBlockBody) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+	offset := 220
+
+	// Field 0: RandaoReveal
+	if len(c.RandaoReveal) != 96 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.RandaoReveal...)
+
+	// Field 1: Eth1Data
+	if c.Eth1Data == nil {
+		c.Eth1Data = new(Eth1Data)
+	}
+	if dst, err = c.Eth1Data.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+
+	// Field 2: Graffiti
+	if len(c.Graffiti) != 32 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.Graffiti...)
+
+	// Field 3: ProposerSlashings
+	dst = ssz.WriteOffset(dst, offset)
+	offset += len(c.ProposerSlashings) * 416
+
+	// Field 4: AttesterSlashings
+	dst = ssz.WriteOffset(dst, offset)
+	offset += func() int {
+		s := 0
+		for _, o := range c.AttesterSlashings {
+			s += 4
+			s += o.SizeSSZ()
+		}
+		return s
+	}()
+
+	// Field 5: Attestations
+	dst = ssz.WriteOffset(dst, offset)
+	offset += func() int {
+		s := 0
+		for _, o := range c.Attestations {
+			s += 4
+			s += o.SizeSSZ()
+		}
+		return s
+	}()
+
+	// Field 6: Deposits
+	dst = ssz.WriteOffset(dst, offset)
+	offset += len(c.Deposits) * 1240
+
+	// Field 7: VoluntaryExits
+	dst = ssz.WriteOffset(dst, offset)
+	offset += len(c.VoluntaryExits) * 112
+
+	// Field 3: ProposerSlashings
+	if len(c.ProposerSlashings) > 16 {
+		return nil, ssz.ErrListTooBig
+	}
+	for _, o := range c.ProposerSlashings {
+		if dst, err = o.MarshalSSZTo(dst); err != nil {
+			return nil, err
+		}
+	}
+
+	// Field 4: AttesterSlashings
+	if len(c.AttesterSlashings) > 2 {
+		return nil, ssz.ErrListTooBig
+	}
+	{
+		offset = 4 * len(c.AttesterSlashings)
+		for _, o := range c.AttesterSlashings {
+			dst = ssz.WriteOffset(dst, offset)
+			offset += o.SizeSSZ()
+		}
+	}
+	for _, o := range c.AttesterSlashings {
+		if dst, err = o.MarshalSSZTo(dst); err != nil {
+			return nil, err
+		}
+	}
+
+	// Field 5: Attestations
+	if len(c.Attestations) > 128 {
+		return nil, ssz.ErrListTooBig
+	}
+	{
+		offset = 4 * len(c.Attestations)
+		for _, o := range c.Attestations {
+			dst = ssz.WriteOffset(dst, offset)
+			offset += o.SizeSSZ()
+		}
+	}
+	for _, o := range c.Attestations {
+		if dst, err = o.MarshalSSZTo(dst); err != nil {
+			return nil, err
+		}
+	}
+
+	// Field 6: Deposits
+	if len(c.Deposits) > 16 {
+		return nil, ssz.ErrListTooBig
+	}
+	for _, o := range c.Deposits {
+		if dst, err = o.MarshalSSZTo(dst); err != nil {
+			return nil, err
+		}
+	}
+
+	// Field 7: VoluntaryExits
+	if len(c.VoluntaryExits) > 16 {
+		return nil, ssz.ErrListTooBig
+	}
+	for _, o := range c.VoluntaryExits {
+		if dst, err = o.MarshalSSZTo(dst); err != nil {
+			return nil, err
+		}
+	}
+	return dst, err
+}
+func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size < 220 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:96]    // c.RandaoReveal
+	s1 := buf[96:168]  // c.Eth1Data
+	s2 := buf[168:200] // c.Graffiti
+
+	v3 := ssz.ReadOffset(buf[200:204]) // c.ProposerSlashings
+	if v3 < 220 {
+		return ssz.ErrInvalidVariableOffset
+	}
+	if v3 > size {
+		return ssz.ErrOffset
+	}
+	v4 := ssz.ReadOffset(buf[204:208]) // c.AttesterSlashings
+	if v4 > size || v4 < v3 {
+		return ssz.ErrOffset
+	}
+	v5 := ssz.ReadOffset(buf[208:212]) // c.Attestations
+	if v5 > size || v5 < v4 {
+		return ssz.ErrOffset
+	}
+	v6 := ssz.ReadOffset(buf[212:216]) // c.Deposits
+	if v6 > size || v6 < v5 {
+		return ssz.ErrOffset
+	}
+	v7 := ssz.ReadOffset(buf[216:220]) // c.VoluntaryExits
+	if v7 > size || v7 < v6 {
+		return ssz.ErrOffset
+	}
+	s3 := buf[v3:v4] // c.ProposerSlashings
+	s4 := buf[v4:v5] // c.AttesterSlashings
+	s5 := buf[v5:v6] // c.Attestations
+	s6 := buf[v6:v7] // c.Deposits
+	s7 := buf[v7:]   // c.VoluntaryExits
+
+	// Field 0: RandaoReveal
+	c.RandaoReveal = append([]byte{}, s0...)
+
+	// Field 1: Eth1Data
+	c.Eth1Data = new(Eth1Data)
+	if err = c.Eth1Data.UnmarshalSSZ(s1); err != nil {
+		return err
+	}
+
+	// Field 2: Graffiti
+	c.Graffiti = append([]byte{}, s2...)
+
+	// Field 3: ProposerSlashings
+	{
+		if len(s3)%416 != 0 {
+			return fmt.Errorf("misaligned bytes: c.ProposerSlashings length is %d, which is not a multiple of 416", len(s3))
+		}
+		numElem := len(s3) / 416
+		if numElem > 16 {
+			return fmt.Errorf("ssz-max exceeded: c.ProposerSlashings has %d elements, ssz-max is 16", numElem)
+		}
+		for i := 0; i < numElem; i++ {
+			var tmp *ProposerSlashing
+			tmp = new(ProposerSlashing)
+			tmpSlice := s3[i*416 : (1+i)*416]
+			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+				return err
+			}
+			c.ProposerSlashings = append(c.ProposerSlashings, tmp)
+		}
+	}
+
+	// Field 4: AttesterSlashings
+	{
+		// empty lists are zero length, so make sure there is room for an offset
+		// before attempting to unmarshal it
+		if len(s4) > 3 {
+			firstOffset := ssz.ReadOffset(s4[0:4])
+			if firstOffset%4 != 0 {
+				return fmt.Errorf("misaligned list bytes: when decoding c.AttesterSlashings, end-of-list offset is %d, which is not a multiple of 4 (offset size)", firstOffset)
+			}
+			listLen := firstOffset / 4
+			if listLen > 2 {
+				return fmt.Errorf("ssz-max exceeded: c.AttesterSlashings has %d elements, ssz-max is 2", listLen)
+			}
+			listOffsets := make([]uint64, listLen)
+			for i := 0; uint64(i) < listLen; i++ {
+				listOffsets[i] = ssz.ReadOffset(s4[i*4 : (i+1)*4])
+			}
+			for i := 0; i < len(listOffsets); i++ {
+				var tmp *AttesterSlashing
+				tmp = new(AttesterSlashing)
+				var tmpSlice []byte
+				if i+1 == len(listOffsets) {
+					tmpSlice = s4[listOffsets[i]:]
+				} else {
+					tmpSlice = s4[listOffsets[i]:listOffsets[i+1]]
+				}
+				if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+					return err
+				}
+				c.AttesterSlashings = append(c.AttesterSlashings, tmp)
+			}
+		}
+	}
+
+	// Field 5: Attestations
+	{
+		// empty lists are zero length, so make sure there is room for an offset
+		// before attempting to unmarshal it
+		if len(s5) > 3 {
+			firstOffset := ssz.ReadOffset(s5[0:4])
+			if firstOffset%4 != 0 {
+				return fmt.Errorf("misaligned list bytes: when decoding c.Attestations, end-of-list offset is %d, which is not a multiple of 4 (offset size)", firstOffset)
+			}
+			listLen := firstOffset / 4
+			if listLen > 128 {
+				return fmt.Errorf("ssz-max exceeded: c.Attestations has %d elements, ssz-max is 128", listLen)
+			}
+			listOffsets := make([]uint64, listLen)
+			for i := 0; uint64(i) < listLen; i++ {
+				listOffsets[i] = ssz.ReadOffset(s5[i*4 : (i+1)*4])
+			}
+			for i := 0; i < len(listOffsets); i++ {
+				var tmp *Attestation
+				tmp = new(Attestation)
+				var tmpSlice []byte
+				if i+1 == len(listOffsets) {
+					tmpSlice = s5[listOffsets[i]:]
+				} else {
+					tmpSlice = s5[listOffsets[i]:listOffsets[i+1]]
+				}
+				if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+					return err
+				}
+				c.Attestations = append(c.Attestations, tmp)
+			}
+		}
+	}
+
+	// Field 6: Deposits
+	{
+		if len(s6)%1240 != 0 {
+			return fmt.Errorf("misaligned bytes: c.Deposits length is %d, which is not a multiple of 1240", len(s6))
+		}
+		numElem := len(s6) / 1240
+		if numElem > 16 {
+			return fmt.Errorf("ssz-max exceeded: c.Deposits has %d elements, ssz-max is 16", numElem)
+		}
+		for i := 0; i < numElem; i++ {
+			var tmp *Deposit
+			tmp = new(Deposit)
+			tmpSlice := s6[i*1240 : (1+i)*1240]
+			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+				return err
+			}
+			c.Deposits = append(c.Deposits, tmp)
+		}
+	}
+
+	// Field 7: VoluntaryExits
+	{
+		if len(s7)%112 != 0 {
+			return fmt.Errorf("misaligned bytes: c.VoluntaryExits length is %d, which is not a multiple of 112", len(s7))
+		}
+		numElem := len(s7) / 112
+		if numElem > 16 {
+			return fmt.Errorf("ssz-max exceeded: c.VoluntaryExits has %d elements, ssz-max is 16", numElem)
+		}
+		for i := 0; i < numElem; i++ {
+			var tmp *SignedVoluntaryExit
+			tmp = new(SignedVoluntaryExit)
+			tmpSlice := s7[i*112 : (1+i)*112]
+			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+				return err
+			}
+			c.VoluntaryExits = append(c.VoluntaryExits, tmp)
+		}
+	}
+	return err
+}
 func (c *BeaconBlockHeader) XXSizeSSZ() int {
 	size := 112
 
 	return size
 }
 func (c *BeaconBlockHeader) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *BeaconBlockHeader) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -391,7 +804,8 @@ func (c *Checkpoint) XXSizeSSZ() int {
 	return size
 }
 func (c *Checkpoint) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *Checkpoint) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -431,7 +845,8 @@ func (c *Deposit) XXSizeSSZ() int {
 	return size
 }
 func (c *Deposit) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *Deposit) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -485,13 +900,75 @@ func (c *Deposit) XXUnmarshalSSZ(buf []byte) error {
 	}
 	return err
 }
+func (c *Deposit_Data) XXSizeSSZ() int {
+	size := 184
+
+	return size
+}
+func (c *Deposit_Data) XXMarshalSSZ() ([]byte, error) {
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
+}
+
+func (c *Deposit_Data) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field 0: PublicKey
+	if len(c.PublicKey) != 48 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.PublicKey...)
+
+	// Field 1: WithdrawalCredentials
+	if len(c.WithdrawalCredentials) != 32 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.WithdrawalCredentials...)
+
+	// Field 2: Amount
+	dst = ssz.MarshalUint64(dst, c.Amount)
+
+	// Field 3: Signature
+	if len(c.Signature) != 96 {
+		return nil, ssz.ErrBytesLength
+	}
+	dst = append(dst, c.Signature...)
+
+	return dst, err
+}
+func (c *Deposit_Data) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 184 {
+		return ssz.ErrSize
+	}
+
+	s0 := buf[0:48]   // c.PublicKey
+	s1 := buf[48:80]  // c.WithdrawalCredentials
+	s2 := buf[80:88]  // c.Amount
+	s3 := buf[88:184] // c.Signature
+
+	// Field 0: PublicKey
+	c.PublicKey = append([]byte{}, s0...)
+
+	// Field 1: WithdrawalCredentials
+	c.WithdrawalCredentials = append([]byte{}, s1...)
+
+	// Field 2: Amount
+	c.Amount = ssz.UnmarshallUint64(s2)
+
+	// Field 3: Signature
+	c.Signature = append([]byte{}, s3...)
+	return err
+}
 func (c *Eth1Data) XXSizeSSZ() int {
 	size := 72
 
 	return size
 }
 func (c *Eth1Data) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *Eth1Data) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -541,7 +1018,8 @@ func (c *IndexedAttestation) XXSizeSSZ() int {
 	return size
 }
 func (c *IndexedAttestation) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *IndexedAttestation) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -628,7 +1106,8 @@ func (c *ProposerSlashing) XXSizeSSZ() int {
 	return size
 }
 func (c *ProposerSlashing) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *ProposerSlashing) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -684,7 +1163,8 @@ func (c *SignedAggregateAttestationAndProof) XXSizeSSZ() int {
 	return size
 }
 func (c *SignedAggregateAttestationAndProof) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *SignedAggregateAttestationAndProof) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -747,7 +1227,8 @@ func (c *SignedBeaconBlock) XXSizeSSZ() int {
 	return size
 }
 func (c *SignedBeaconBlock) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *SignedBeaconBlock) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -807,7 +1288,8 @@ func (c *SignedBeaconBlockHeader) XXSizeSSZ() int {
 	return size
 }
 func (c *SignedBeaconBlockHeader) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *SignedBeaconBlockHeader) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -855,7 +1337,8 @@ func (c *SignedVoluntaryExit) XXSizeSSZ() int {
 	return size
 }
 func (c *SignedVoluntaryExit) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *SignedVoluntaryExit) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -903,7 +1386,8 @@ func (c *Validator) XXSizeSSZ() int {
 	return size
 }
 func (c *Validator) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *Validator) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -988,7 +1472,8 @@ func (c *VoluntaryExit) XXSizeSSZ() int {
 	return size
 }
 func (c *VoluntaryExit) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *VoluntaryExit) XXMarshalSSZTo(dst []byte) ([]byte, error) {

@@ -12,7 +12,7 @@ import (
 	"github.com/golang/snappy"
 	"github.com/prysmaticlabs/prysm/beacon-chain/state/v1"
 	pb "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
-	ethpb "github.com/prysmaticlabs/prysm/proto/eth/v1alpha1"
+	ethpb "github.com/prysmaticlabs/prysm/proto/eth/v1"
 	"github.com/prysmaticlabs/prysm/shared/testutil"
 	"github.com/prysmaticlabs/prysm/shared/testutil/require"
 	"github.com/prysmaticlabs/prysm/spectest/utils"
@@ -165,34 +165,29 @@ func UnmarshalledSSZ(serializedBytes []byte, folderName string) (interface{}, er
 	if err != nil {
 		return nil, err
 	}
-	if o, ok := obj.(ExperimentalSSZ); ok {
-		err = o.XXUnmarshalSSZ(serializedBytes)
-		if err != nil {
-			return nil, err
-		}
-		marshalled, err := o.XXMarshalSSZ()
-		if err != nil {
-			return nil, err
-		}
-
-		// get a new instance for unmarshaling
-		obj, err = GetInstanceByName(folderName)
-		if err != nil {
-			return nil, err
-		}
-		oo, ok := obj.(fssz.Unmarshaler)
-		if !ok {
-			return nil, fmt.Errorf("%s implements ExperimentalSSZ but not fssz.Unmarshaler?", folderName)
-		}
-		// make sure we can unmarshal with fastssz code
-		err = oo.UnmarshalSSZ(marshalled)
-		return oo, err
+	o, ok := obj.(ExperimentalSSZ)
+	if !ok {
+		return nil, fmt.Errorf("%s fails ExperimentalSSZ interface check", folderName)
 	}
-	if o, ok := obj.(fssz.Unmarshaler); ok {
-		err = o.UnmarshalSSZ(serializedBytes)
-		return obj, err
-	}
+	err = o.XXUnmarshalSSZ(serializedBytes)
+	if err != nil {
+			  return nil, err
+			  }
+	marshalled, err := o.XXMarshalSSZ()
+	if err != nil {
+			  return nil, err
+			  }
 
-	err = errors.New("could not unmarshal object, not a fastssz compatible object")
-	return obj, err
+	// get a new instance for unmarshaling
+	obj, err = GetInstanceByName(folderName)
+	if err != nil {
+			  return nil, err
+			  }
+	oo, ok := obj.(fssz.Unmarshaler)
+	if !ok {
+	   return nil, fmt.Errorf("%s implements ExperimentalSSZ but not fssz.Unmarshaler?", folderName)
+	   }
+	// make sure we can unmarshal with fastssz code
+	err = oo.UnmarshalSSZ(marshalled)
+	return oo, err
 }

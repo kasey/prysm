@@ -21,6 +21,15 @@ func (g *generateOverlay) toOverlay() func(string) string {
 	}
 }
 
+func (g *generateOverlay) generateVariableMarshalValue(fieldName string) string {
+	gg := newValueGenerator(g.Underlying, g.targetPackage)
+	vm, ok := gg.(variableMarshaller)
+	if !ok {
+		return ""
+	}
+	return vm.generateVariableMarshalValue(fieldName)
+}
+
 func (g *generateOverlay) generateUnmarshalValue(fieldName string, sliceName string) string {
 	gg := newValueGenerator(g.Underlying, g.targetPackage)
 	c, ok := gg.(caster)

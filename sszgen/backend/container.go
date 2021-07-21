@@ -103,7 +103,8 @@ func (g *generateContainer) GenerateSizeSSZ() *generatedCode {
 }
 
 var marshalBodyTmpl = `func ({{.Receiver}} {{.Type}}) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ({{.Receiver}})
+	buf := make([]byte, {{.Receiver}}.XXSizeSSZ())
+	return {{.Receiver}}.XXMarshalSSZTo(buf[:0])
 }
 
 func ({{.Receiver}} {{.Type}}) XXMarshalSSZTo(dst []byte) ([]byte, error) {

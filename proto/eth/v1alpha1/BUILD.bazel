@@ -121,7 +121,6 @@ go_library(
     srcs = [
         ":ssz_generated_files",  # keep
 	"methodical.ssz.go",
-	"aaap.ssz.go",
     ],
     embed = [
         ":go_grpc_gateway_library",

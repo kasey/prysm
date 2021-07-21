@@ -14,7 +14,8 @@ func (c *BeaconBlocksByRangeRequest) XXSizeSSZ() int {
 	return size
 }
 func (c *BeaconBlocksByRangeRequest) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *BeaconBlocksByRangeRequest) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -58,7 +59,8 @@ func (c *DepositMessage) XXSizeSSZ() int {
 	return size
 }
 func (c *DepositMessage) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *DepositMessage) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -108,7 +110,8 @@ func (c *ENRForkID) XXSizeSSZ() int {
 	return size
 }
 func (c *ENRForkID) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *ENRForkID) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -158,7 +161,8 @@ func (c *MetaDataV0) XXSizeSSZ() int {
 	return size
 }
 func (c *MetaDataV0) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *MetaDataV0) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -198,7 +202,8 @@ func (c *MetaDataV1) XXSizeSSZ() int {
 	return size
 }
 func (c *MetaDataV1) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *MetaDataV1) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -248,7 +253,8 @@ func (c *Fork) XXSizeSSZ() int {
 	return size
 }
 func (c *Fork) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *Fork) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -298,7 +304,8 @@ func (c *ForkData) XXSizeSSZ() int {
 	return size
 }
 func (c *ForkData) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *ForkData) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -341,7 +348,8 @@ func (c *HistoricalBatch) XXSizeSSZ() int {
 	return size
 }
 func (c *HistoricalBatch) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *HistoricalBatch) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -408,7 +416,8 @@ func (c *Status) XXSizeSSZ() int {
 	return size
 }
 func (c *Status) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *Status) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -494,7 +503,8 @@ func (c *BeaconState) XXSizeSSZ() int {
 	return size
 }
 func (c *BeaconState) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *BeaconState) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -1028,7 +1038,8 @@ func (c *BeaconStateAltair) XXSizeSSZ() int {
 	return size
 }
 func (c *BeaconStateAltair) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *BeaconStateAltair) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -1517,13 +1528,92 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 	}
 	return err
 }
+func (c *PendingAttestation) XXSizeSSZ() int {
+	size := 148
+
+	return size
+}
+func (c *PendingAttestation) XXMarshalSSZ() ([]byte, error) {
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
+}
+
+func (c *PendingAttestation) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+	offset := 148
+
+	// Field 0: AggregationBits
+	dst = ssz.WriteOffset(dst, offset)
+	offset += len(c.AggregationBits) * 1
+
+	// Field 1: Data
+	if c.Data == nil {
+		c.Data = new(prysmaticlabs_prysm_proto_eth_v1alpha1.AttestationData)
+	}
+	if dst, err = c.Data.MarshalSSZTo(dst); err != nil {
+		return nil, err
+	}
+
+	// Field 2: InclusionDelay
+	dst = ssz.MarshalUint64(dst, uint64(c.InclusionDelay))
+
+	// Field 3: ProposerIndex
+	dst = ssz.MarshalUint64(dst, uint64(c.ProposerIndex))
+
+	// Field 0: AggregationBits
+	if len(c.AggregationBits) > 2048 {
+		return nil, ssz.ErrListTooBig
+	}
+	dst = append(dst, c.AggregationBits...)
+	return dst, err
+}
+func (c *PendingAttestation) XXUnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size < 148 {
+		return ssz.ErrSize
+	}
+
+	s1 := buf[4:132]   // c.Data
+	s2 := buf[132:140] // c.InclusionDelay
+	s3 := buf[140:148] // c.ProposerIndex
+
+	v0 := ssz.ReadOffset(buf[0:4]) // c.AggregationBits
+	if v0 < 148 {
+		return ssz.ErrInvalidVariableOffset
+	}
+	if v0 > size {
+		return ssz.ErrOffset
+	}
+	s0 := buf[v0:] // c.AggregationBits
+
+	// Field 0: AggregationBits
+	if err = ssz.ValidateBitlist(s0, 2048); err != nil {
+		return err
+	}
+	c.AggregationBits = append([]byte{}, prysmaticlabs_go_bitfield.Bitlist(s0)...)
+
+	// Field 1: Data
+	c.Data = new(prysmaticlabs_prysm_proto_eth_v1alpha1.AttestationData)
+	if err = c.Data.UnmarshalSSZ(s1); err != nil {
+		return err
+	}
+
+	// Field 2: InclusionDelay
+	c.InclusionDelay = prysmaticlabs_eth2_types.Slot(ssz.UnmarshallUint64(s2))
+
+	// Field 3: ProposerIndex
+	c.ProposerIndex = prysmaticlabs_eth2_types.ValidatorIndex(ssz.UnmarshallUint64(s3))
+	return err
+}
 func (c *SigningData) XXSizeSSZ() int {
 	size := 64
 
 	return size
 }
 func (c *SigningData) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *SigningData) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -1566,7 +1656,8 @@ func (c *SyncCommittee) XXSizeSSZ() int {
 	return size
 }
 func (c *SyncCommittee) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *SyncCommittee) XXMarshalSSZTo(dst []byte) ([]byte, error) {
@@ -1621,7 +1712,8 @@ func (c *SyncAggregatorSelectionData) XXSizeSSZ() int {
 	return size
 }
 func (c *SyncAggregatorSelectionData) XXMarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(c)
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
 func (c *SyncAggregatorSelectionData) XXMarshalSSZTo(dst []byte) ([]byte, error) {
