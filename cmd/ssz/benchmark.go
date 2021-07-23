@@ -141,9 +141,11 @@ func findTestCases(path string) ([]*TestCase, error) {
 		if len(parts) != 5 || parts[1] == "" || parts[2] == "" || parts[3] == "" || parts[4] == "" {
 			return nil
 		}
+		/*
 		if parts[3] == "BeaconState" || parts[3] == "HistoricalBatch" {
 			return nil
 		}
+		*/
 		tcs = append(tcs, &TestCase{
 			path: path,
 			config: parts[1],
