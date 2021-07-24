@@ -7,6 +7,9 @@ go_library(
         "byte.go",
         "caster.go",
         "container.go",
+        "genmarshal.go",
+        "gensize.go",
+        "genunmarshal.go",
         "list.go",
         "overlay.go",
         "pointer.go",
@@ -29,6 +32,8 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":go_default_library"],
+    # dummy importpath to unbreak debugging
+    importpath = "github.com/prysmaticlabs/prysm/sszgen/backend/tests-dummy",
     deps = [
         "//shared/testutil/require:go_default_library",
         "//sszgen/types:go_default_library",

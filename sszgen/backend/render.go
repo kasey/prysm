@@ -58,17 +58,22 @@ func NewGenerator(packageName, packagePath string) *Generator {
 	}
 }
 
+// TODO Generate should be able to return an error
 func (g *Generator) Generate(vr types.ValRep) {
-	mg := newMethodGenerator(vr, g.packagePath)
-	sizeSSZ := mg.GenerateSizeSSZ()
+	vc, ok := vr.(*types.ValueContainer)
+	if !ok {
+		panic("Can only generate method sets for container types at this time")
+	}
+	gc := &generateContainer{vc, g.packagePath}
+	sizeSSZ := GenerateSizeSSZ(gc)
 	if sizeSSZ != nil {
 		g.gc = append(g.gc, sizeSSZ)
 	}
-	mSSZ := mg.GenerateMarshalSSZ()
+	mSSZ := GenerateMarshalSSZ(gc)
 	if sizeSSZ != nil {
 		g.gc = append(g.gc, mSSZ)
 	}
-	uSSZ := mg.GenerateUnmarshalSSZ()
+	uSSZ := GenerateUnmarshalSSZ(gc)
 	if sizeSSZ != nil {
 		g.gc = append(g.gc, uSSZ)
 	}
@@ -85,6 +90,12 @@ import (
 {{.Blocks}}`
 
 func (g *Generator) Render() ([]byte, error) {
+	if g.packagePath == "" {
+		return nil, fmt.Errorf("missing packagePath: Generator requires a packagePath for code generation.")
+	}
+	if g.packageName == "" {
+		return nil, fmt.Errorf("missing packageName: Generator requires a target package name for code generation.")
+	}
 	ft := template.New("generated.ssz.go")
 	tmpl, err := ft.Parse(fileTemplate)
 	if err != nil {
@@ -100,7 +111,7 @@ func (g *Generator) Render() ([]byte, error) {
 		final.merge(gc)
 	}
 	buf := bytes.NewBuffer(nil)
-	tmpl.Execute(buf, struct {
+	err = tmpl.Execute(buf, struct {
 		Package string
 		Imports string
 		Blocks  string
@@ -109,14 +120,10 @@ func (g *Generator) Render() ([]byte, error) {
 		Imports: final.renderImportPairs(),
 		Blocks: final.renderBlocks(),
 	})
+	if err != nil {
+		return nil, err
+	}
 	return format.Source(buf.Bytes())
-}
-
-type methodGenerator interface {
-	GenerateSizeSSZ() *generatedCode
-	GenerateMarshalSSZ() *generatedCode
-	GenerateUnmarshalSSZ() *generatedCode
-	//GenerateHashTreeRoot() jen.Code
 }
 
 type valueGenerator interface {
@@ -161,14 +168,6 @@ func newValueGenerator(vr types.ValRep, packagePath string) valueGenerator {
 		return &generateUnion{ty, packagePath}
 	case *types.ValueVector:
 		return &generateVector{valRep: ty, targetPackage: packagePath}
-	}
-	panic(fmt.Sprintf("Cannot manage generation for unrecognized ValRep implementation %v", vr))
-}
-
-func newMethodGenerator(vr types.ValRep, packagePath string) methodGenerator {
-	switch ty := vr.(type) {
-	case *types.ValueContainer:
-		return &generateContainer{ty, packagePath}
 	}
 	panic(fmt.Sprintf("Cannot manage generation for unrecognized ValRep implementation %v", vr))
 }

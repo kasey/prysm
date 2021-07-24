@@ -1,6 +1,8 @@
 package backend
 
 import (
+	"go/format"
+	"os"
 	"testing"
 
 	"github.com/prysmaticlabs/prysm/shared/testutil/require"
@@ -11,6 +13,7 @@ var generator_generateFixture = `package derp
 
 import (
 	"fmt"
+	ssz "github.com/ferranbt/fastssz"
 	derp "github.com/prysmaticlabs/derp/derp"
 )
 
@@ -24,54 +27,33 @@ func TestGenerator_Generate(t *testing.T) {
 		blocks:  []string{"func main() {\n\tfmt.printf(\"hello world\")\n}"},
 		imports: map[string]string{
 			"github.com/prysmaticlabs/derp/derp": "derp",
+			"github.com/ferranbt/fastssz": "ssz",
 			"fmt": "",
 		},
 	}
-	g := &Generator{packagePath: "github.com/prysmaticlabs/derp"}
+	g := &Generator{packagePath: "github.com/prysmaticlabs/derp", packageName: "derp"}
 	g.gc = append(g.gc, gc)
 	rendered, err := g.Render()
 	require.NoError(t, err)
 	require.Equal(t, generator_generateFixture, string(rendered))
 }
 
-var generator_generateBeaconStateFixture = `package derp
-
-import (
-	ssz "github.com/ferranbt/fastssz"
-)
-
-func (c *BeaconState) SizeSSZ() (size int) {
-	size := 2687377
-	size += len(c.HistoricalRoots) * 32
-	size += len(c.Eth1DataVotes) * 72
-	size += len(c.Validators) * 121
-	size += len(c.Balances) * 8
-	size += func() int {
-		s := 0
-		for _, o := range c.PreviousEpochAttestations {
-			s += 4
-			s += c.PreviousEpochAttestations.SizeSSZ()
-		}
-		return s
-	}()
-	size += func() int {
-		s := 0
-		for _, o := range c.CurrentEpochAttestations {
-			s += 4
-			s += c.CurrentEpochAttestations.SizeSSZ()
-		}
-		return s
-	}()
-	return size
-}
-`
-
 func TestGenerator_GenerateBeaconState(t *testing.T) {
-	g := &Generator{packagePath: "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"}
+	b, err := os.ReadFile("testdata/TestGenerator_GenerateBeaconState.expected")
+	require.NoError(t, err)
+	formatted, err := format.Source(b)
+	require.NoError(t, err)
+	expected := string(formatted)
+
+	g := &Generator{
+		packagePath: "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1",
+		packageName: "ethereum_beacon_p2p_v1",
+	}
 	g.Generate(testFixBeaconState)
 	rendered, err := g.Render()
 	require.NoError(t, err)
-	require.Equal(t, generator_generateBeaconStateFixture, string(rendered))
+	actual := string(rendered)
+	require.Equal(t, expected, actual)
 }
 
 func TestImportAlias(t *testing.T) {
@@ -98,7 +80,8 @@ func TestImportAlias(t *testing.T) {
 }
 
 func TestExtractImportsFromContainerFields(t *testing.T) {
-	vc := testFixBeaconState.(*types.ValueContainer)
+	vc, ok := testFixBeaconState.(*types.ValueContainer)
+	require.Equal(t, true, ok)
 	targetPackage := "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
 	imports := extractImportsFromContainerFields(vc.Contents, targetPackage)
 	require.Equal(t, 3, len(imports))

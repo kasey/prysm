@@ -1,8 +1,10 @@
-func (c *BeaconState) MarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(b)
+func (c *BeaconState) XXMarshalSSZ() ([]byte, error) {
+	buf := make([]byte, c.XXSizeSSZ())
+	return c.XXMarshalSSZTo(buf[:0])
 }
 
-func (c *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
+func (c *BeaconState) XXMarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
 	offset := 2687377
 
 	// Field 0: GenesisTime
@@ -21,7 +23,7 @@ func (c *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.Fork == nil {
 		c.Fork = new(prysmaticlabs_prysm_proto_beacon_p2p_v1.Fork)
 	}
-	if dst, err = c.Fork.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.Fork.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -29,7 +31,7 @@ func (c *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.LatestBlockHeader == nil {
 		c.LatestBlockHeader = new(prysmaticlabs_prysm_proto_eth_v1alpha1.BeaconBlockHeader)
 	}
-	if dst, err = c.LatestBlockHeader.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.LatestBlockHeader.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -63,7 +65,7 @@ func (c *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.Eth1Data == nil {
 		c.Eth1Data = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data)
 	}
-	if dst, err = c.Eth1Data.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.Eth1Data.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -107,7 +109,7 @@ func (c *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 		s := 0
 		for _, o := range c.PreviousEpochAttestations {
 			s += 4
-			s += c.PreviousEpochAttestations.SizeSSZ()
+			s += o.SizeSSZ()
 		}
 		return s
 	}()
@@ -118,22 +120,22 @@ func (c *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 		s := 0
 		for _, o := range c.CurrentEpochAttestations {
 			s += 4
-			s += c.CurrentEpochAttestations.SizeSSZ()
+			s += o.SizeSSZ()
 		}
 		return s
 	}()
 
 	// Field 17: JustificationBits
-	if len(c.JustificationBits) != 1 {
+	if len([]byte(c.JustificationBits)) != 1 {
 		return nil, ssz.ErrBytesLength
 	}
-	dst = append(dst, c.JustificationBits...)
+	dst = append(dst, []byte(c.JustificationBits)...)
 
 	// Field 18: PreviousJustifiedCheckpoint
 	if c.PreviousJustifiedCheckpoint == nil {
 		c.PreviousJustifiedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
 	}
-	if dst, err = c.PreviousJustifiedCheckpoint.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.PreviousJustifiedCheckpoint.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -141,7 +143,7 @@ func (c *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.CurrentJustifiedCheckpoint == nil {
 		c.CurrentJustifiedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
 	}
-	if dst, err = c.CurrentJustifiedCheckpoint.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.CurrentJustifiedCheckpoint.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -149,7 +151,7 @@ func (c *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.FinalizedCheckpoint == nil {
 		c.FinalizedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
 	}
-	if dst, err = c.FinalizedCheckpoint.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.FinalizedCheckpoint.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -169,10 +171,7 @@ func (c *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 		return nil, ssz.ErrListTooBig
 	}
 	for _, o := range c.Eth1DataVotes {
-		if o == nil {
-			o = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data)
-		}
-		if dst, err = o.MarshalSSZTo(dst); err != nil {
+		if dst, err = o.XXMarshalSSZTo(dst); err != nil {
 			return nil, err
 		}
 	}
@@ -182,10 +181,7 @@ func (c *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 		return nil, ssz.ErrListTooBig
 	}
 	for _, o := range c.Validators {
-		if o == nil {
-			o = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Validator)
-		}
-		if dst, err = o.MarshalSSZTo(dst); err != nil {
+		if dst, err = o.XXMarshalSSZTo(dst); err != nil {
 			return nil, err
 		}
 	}
@@ -210,10 +206,7 @@ func (c *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 		}
 	}
 	for _, o := range c.PreviousEpochAttestations {
-		if o == nil {
-			o = new(prysmaticlabs_prysm_proto_beacon_p2p_v1.PendingAttestation)
-		}
-		if dst, err = o.MarshalSSZTo(dst); err != nil {
+		if dst, err = o.XXMarshalSSZTo(dst); err != nil {
 			return nil, err
 		}
 	}
@@ -230,12 +223,9 @@ func (c *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 		}
 	}
 	for _, o := range c.CurrentEpochAttestations {
-		if o == nil {
-			o = new(prysmaticlabs_prysm_proto_beacon_p2p_v1.PendingAttestation)
-		}
-		if dst, err = o.MarshalSSZTo(dst); err != nil {
+		if dst, err = o.XXMarshalSSZTo(dst); err != nil {
 			return nil, err
 		}
 	}
-	return dst, nil
+	return dst, err
 }
