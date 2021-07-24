@@ -7,6 +7,7 @@ go_library(
         "byte.go",
         "caster.go",
         "container.go",
+        "genhtr.go",
         "genmarshal.go",
         "gensize.go",
         "genunmarshal.go",
@@ -28,6 +29,10 @@ go_test(
     name = "go_default_test",
     srcs = [
         "container_test.go",
+        "genhtr_test.go",
+        "genmarshal_test.go",
+        "gensize_test.go",
+        "genunmarshal_test.go",
         "render_test.go",
     ],
     data = glob(["testdata/**"]),

@@ -1,13 +1,8 @@
 package backend
 
 import (
-	"go/format"
-	"os"
-	"strings"
-	"testing"
-
-	"github.com/prysmaticlabs/prysm/shared/testutil/require"
 	"github.com/prysmaticlabs/prysm/sszgen/types"
+	"go/format"
 )
 
 func normalizeFixtureBytes(raw []byte) (string, error) {
@@ -24,70 +19,6 @@ func normalizeFixtureBytes(raw []byte) (string, error) {
 
 func normalizeFixtureString(raw string) (string, error) {
 	return normalizeFixtureBytes([]byte(raw))
-}
-
-func TestGenerateContainer_GenerateSizeSSZ(t *testing.T) {
-	b, err := os.ReadFile("testdata/TestGenerateContainer_GenerateSizeSSZ.expected")
-	require.NoError(t, err)
-	expected := string(b)
-
-	ty, ok := testFixBeaconState.(*types.ValueContainer)
-	require.Equal(t, true, ok)
-	gc := GenerateSizeSSZ(&generateContainer{ty, ""})
-	require.Equal(t, 4, len(gc.imports))
-	actual, err := normalizeFixtureString(gc.blocks[0])
-	require.NoError(t, err)
-	require.Equal(t, expected, actual)
-}
-
-func TestGenerateContainer_GenerateMarshalSSZ(t *testing.T) {
-	b, err := os.ReadFile("testdata/TestGenerateContainer_GenerateMarshalSSZ.expected")
-	require.NoError(t, err)
-	expected := string(b)
-
-	vc, ok := testFixBeaconState.(*types.ValueContainer)
-	require.Equal(t, true, ok)
-	gc := &generateContainer{vc, ""}
-	code := GenerateMarshalSSZ(gc)
-	require.Equal(t, 4, len(code.imports))
-	actual, err := normalizeFixtureString(code.blocks[0])
-	require.NoError(t, err)
-	require.Equal(t, expected, actual)
-}
-
-func TestGenerateContainer_GenerateUnmarshalSSZ(t *testing.T) {
-	b, err := os.ReadFile("testdata/TestGenerateContainer_GenerateUnmarshalSSZ.expected")
-	require.NoError(t, err)
-	expected := string(b)
-
-	vc, ok := testFixBeaconState.(*types.ValueContainer)
-	require.Equal(t, true, ok)
-	gc := &generateContainer{vc, ""}
-	code := GenerateUnmarshalSSZ(gc)
-	require.Equal(t, 4, len(code.imports))
-	actual, err := normalizeFixtureString(code.blocks[0])
-	require.NoError(t, err)
-	require.Equal(t, expected, actual)
-}
-
-func TestUnmarshalSteps(t *testing.T) {
-	fixturePath := "testdata/TestUnmarshalSteps.expected"
-	b, err := os.ReadFile(fixturePath)
-	require.NoError(t, err)
-	expected, err := normalizeFixtureBytes(b)
-	require.NoError(t, err)
-
-	vc, ok := testFixBeaconState.(*types.ValueContainer)
-	require.Equal(t, true, ok)
-	gc := &generateContainer{vc, "" }
-	ums := gc.unmarshalSteps()
-	require.Equal(t, 21, len(ums))
-	require.Equal(t, ums[15].nextVariable.fieldNumber, ums[16].fieldNumber)
-
-	gotRaw := strings.Join([]string{ums.fixedSlices(), "", ums.variableSlices(gc.fixedOffset())}, "\n")
-	actual, err := normalizeFixtureString(gotRaw)
-	require.NoError(t, err)
-	require.Equal(t, expected, actual)
 }
 
 var testFixStatus types.ValRep = &types.ValueContainer{Name: "Status", Package: "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1", Contents: []types.ContainerField{{Key: "ForkDigest", Value: &types.ValueVector{Size: 4, ElementValue: &types.ValueByte{Name: "byte"}}}, {Key: "FinalizedRoot", Value: &types.ValueVector{Size: 32, ElementValue: &types.ValueByte{Name: "byte"}}}, {Key: "FinalizedEpoch", Value: &types.ValueOverlay{Name: "Epoch", Package: "github.com/prysmaticlabs/eth2-types", Underlying: &types.ValueUint{Name: "uint64", Size: 64}}}, {Key: "HeadRoot", Value: &types.ValueVector{Size: 32, ElementValue: &types.ValueByte{Name: "byte"}}}, {Key: "HeadSlot", Value: &types.ValueOverlay{Name: "Slot", Package: "github.com/prysmaticlabs/eth2-types", Underlying: &types.ValueUint{Name: "uint64", Size: 64}}}}}
