@@ -104,6 +104,34 @@ func (g *generateVector) generateFixedMarshalValue(fieldName string) string {
 	return string(buf.Bytes())
 }
 
+func (g *generateVector) generateHTRPutter(fieldName string) string {
+	var putValue string
+	switch g.valRep.ElementValue.(type) {
+	case *types.ValueByte:
+		putValue = fmt.Sprintf("hh.PutBytes(%s)", fieldName)
+	default:
+		nestedFieldName := "o"
+		if fieldName[0:1] == "o" && monoCharacter(fieldName) {
+			nestedFieldName = fieldName + "o"
+		}
+		t := `subIndx := hh.Index()
+for _, %s := range %s {
+	%s
+}
+hh.Merkelize(subIndx)`
+		gg := newValueGenerator(g.valRep.ElementValue, g.targetPackage)
+		internal := gg.generateHTRPutter(nestedFieldName)
+		putValue = fmt.Sprintf(t, nestedFieldName, fieldName, internal)
+	}
+	tmpl := `{
+	if len(%s) != %d {
+		return ssz.ErrVectorLength
+	}
+	%s
+}`
+	return fmt.Sprintf(tmpl, fieldName, g.valRep.Size, putValue)
+}
+
 func monoCharacter(s string) bool {
 	ch := s[0]
 	for i := 1; i < len(s); i++ {

@@ -11,6 +11,10 @@ type generateByte struct {
 	targetPackage string
 }
 
+func (g *generateByte) generateHTRPutter(fieldName string) string {
+	return ""
+}
+
 func (g *generateByte) coerce() func(string) string {
 	return func(fieldName string) string {
 		return fmt.Sprintf("%s(%s)", g.TypeName(), fieldName)

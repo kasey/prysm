@@ -11,6 +11,10 @@ type generateBool struct {
 	casterConfig
 }
 
+func (g *generateBool) generateHTRPutter(fieldName string) string {
+	return ""
+}
+
 func (g *generateBool) coerce() func(string) string {
 	return func(fieldName string) string {
 		return fmt.Sprintf("%s(%s)", g.valRep.TypeName(), fieldName)

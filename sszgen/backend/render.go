@@ -130,6 +130,7 @@ type valueGenerator interface {
 	variableSizeSSZ(fieldname string) string
 	generateFixedMarshalValue(string) string
 	generateUnmarshalValue(string, string) string
+	generateHTRPutter(string) string
 }
 
 type valueInitializer interface {
@@ -146,6 +147,10 @@ type variableUnmarshaller interface {
 
 type coercer interface {
 	coerce() func(string) string
+}
+
+type htrPutter interface {
+	generateHTRPutter(string) string
 }
 
 func newValueGenerator(vr types.ValRep, packagePath string) valueGenerator {

@@ -62,4 +62,18 @@ func (g *generateOverlay) variableSizeSSZ(fieldname string) string {
 	return ""
 }
 
+func (g *generateOverlay) generateHTRPutter(fieldName string) string {
+	gg := newValueGenerator(g.Underlying, g.targetPackage)
+	htrp, ok := gg.(htrPutter)
+	if !ok {
+		return ""
+	}
+	uc, ok := gg.(coercer)
+	if ok {
+		c := uc.coerce()
+		return htrp.generateHTRPutter(c(fieldName))
+	}
+	return htrp.generateHTRPutter(fieldName)
+}
+
 var _ valueGenerator = &generateOverlay{}

@@ -14,6 +14,10 @@ type generateList struct {
 	casterConfig
 }
 
+func (g *generateList) generateHTRPutter(fieldName string) string {
+	return ""
+}
+
 var generateListGenerateUnmarshalValueFixedTmpl = `{
 	if len({{.SliceName}}) % {{.ElementSize}} != 0 {
 		return fmt.Errorf("misaligned bytes: {{.FieldName}} length is %d, which is not a multiple of {{.ElementSize}}", len({{.SliceName}}))

@@ -2,7 +2,6 @@ package backend
 
 import (
 	"fmt"
-
 	"github.com/prysmaticlabs/prysm/sszgen/types"
 )
 
@@ -11,6 +10,13 @@ const receiverName = "c"
 type generateContainer struct {
 	*types.ValueContainer
 	targetPackage string
+}
+
+func (g *generateContainer) generateHTRPutter(fieldName string) string {
+	tmpl := `if err := %s.HashTreeRootWith(hh); err != nil {
+		return err
+	}`
+	return fmt.Sprintf(tmpl, fieldName)
 }
 
 func (g *generateContainer) variableSizeSSZ(fieldName string) string {
@@ -61,3 +67,4 @@ func (g *generateContainer) initializeValue(fieldName string) string {
 
 var _ valueGenerator = &generateContainer{}
 var _ valueInitializer = &generateContainer{}
+var _ htrPutter = &generateContainer{}

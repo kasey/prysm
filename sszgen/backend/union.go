@@ -9,6 +9,10 @@ type generateUnion struct {
 	targetPackage string
 }
 
+func (g *generateUnion) generateHTRPutter(fieldName string) string {
+	return ""
+}
+
 func (g *generateUnion) generateUnmarshalValue(fieldName string, s string) string {
 	return ""
 }

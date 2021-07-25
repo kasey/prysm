@@ -28,6 +28,10 @@ func (g *generateUint) generateFixedMarshalValue(fieldName string) string {
 	return fmt.Sprintf("dst = ssz.MarshalUint%d(dst, %s)", g.valRep.Size, fieldName)
 }
 
+func (g *generateUint) generateHTRPutter(fieldName string) string {
+	return fmt.Sprintf("hh.PutUint%d(%s)", g.valRep.Size, fieldName)
+}
+
 func (g *generateUint) variableSizeSSZ(fieldname string) string {
 	return ""
 }

@@ -11,6 +11,15 @@ type generatePointer struct {
 	targetPackage string
 }
 
+func (g *generatePointer) generateHTRPutter(fieldName string) string {
+	gg := newValueGenerator(g.Referent, g.targetPackage)
+	hp, ok := gg.(htrPutter)
+	if !ok {
+		return ""
+	}
+	return hp.generateHTRPutter(fieldName)
+}
+
 func (g *generatePointer) generateFixedMarshalValue(fieldName string) string {
 	gg := newValueGenerator(g.Referent, g.targetPackage)
 	return gg.generateFixedMarshalValue(fieldName)
@@ -45,3 +54,4 @@ func (g *generatePointer) variableSizeSSZ(fieldName string) string {
 }
 
 var _ valueGenerator = &generatePointer{}
+var _ htrPutter = &generatePointer{}
