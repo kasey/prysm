@@ -9,12 +9,7 @@ import (
 )
 
 // cases left to satisfy:
-// vector-vector-byte
 // list-vector-byte
-// list-container
-// list-uint64
-// vector-uint64
-// Bitvector
 func TestGenerateHashTreeRoot(t *testing.T) {
 	b, err := os.ReadFile("testdata/TestGenerateHashTreeRoot.expected")
 	require.NoError(t, err)

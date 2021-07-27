@@ -7,6 +7,11 @@ import (
 	"text/template"
 )
 
+// ChunkSize is used to check if packed bytes align to the chunk sized used by the
+// merkleization algorithm. If not, the bytes should be zero-padded to the
+// nearest multiple of ChunkSize.
+const ChunkSize = 32
+
 var htrTmpl = `// HashTreeRoot ssz hashes the BeaconState object
 func ({{.Receiver}} {{.Type}}) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()

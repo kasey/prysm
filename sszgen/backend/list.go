@@ -14,7 +14,121 @@ type generateList struct {
 	casterConfig
 }
 
+var generateListHTRPutterTmpl = `{
+	if len({{.FieldName}}) > {{.MaxSize}} {
+		return ssz.ErrListTooBig
+	}
+	subIndx := hh.Index()
+	for _, {{.NestedFieldName}} := range {{.FieldName}} {
+		{{.AppendCall}}
+	}
+	{{- .PadCall}}
+	{{.Merkleize}}
+}`
+
+type listPutterElements struct {
+	FieldName string
+	NestedFieldName string
+	MaxSize int
+	AppendCall string
+	PadCall string
+	Merkleize string
+}
+
+/*
+
+// single []byte example
+	// Field (16) 'CurrentEpochParticipation'
+	if len(b.CurrentEpochParticipation) > 1099511627776 {
+		err = ssz.ErrBytesLength
+		return
+	}
+	hh.PutBytes(b.CurrentEpochParticipation)
+
+// nested [][]byte example (list-vector-byte)
+	// Field (7) 'HistoricalRoots'
+	{
+		if len(b.HistoricalRoots) > 16777216 {
+			err = ssz.ErrListTooBig
+			return
+		}
+		subIndx := hh.Index()
+		for _, i := range b.HistoricalRoots {
+			if len(i) != 32 {
+				err = ssz.ErrBytesLength
+				return
+			}
+			hh.Append(i)
+		}
+		numItems := uint64(len(b.HistoricalRoots))
+		hh.MerkleizeWithMixin(subIndx, numItems, ssz.CalculateLimit(16777216, numItems, 32))
+	}
+ */
+
+func renderHtrListPutter(lpe listPutterElements) string {
+	tmpl, err := template.New("renderHtrListPutter").Parse(generateListHTRPutterTmpl)
+	if err != nil {
+		panic(err)
+	}
+	buf := bytes.NewBuffer(nil)
+	err = tmpl.Execute(buf, lpe)
+	if err != nil {
+		panic(err)
+	}
+	return buf.String()
+}
+
 func (g *generateList) generateHTRPutter(fieldName string) string {
+	nestedFieldName := "o"
+	if fieldName[0:1] == "o" && monoCharacter(fieldName) {
+		nestedFieldName = fieldName + "o"
+	}
+
+	// resolve pointers and overlays to their underlying types
+	vr := g.valRep.ElementValue
+	if vrp, isPointer := vr.(*types.ValuePointer); isPointer {
+		vr = vrp.Referent
+	}
+	if vro, isOverlay := vr.(*types.ValueOverlay); isOverlay {
+		vr = vro.Underlying
+	}
+
+	lpe := listPutterElements{
+		FieldName: fieldName,
+		NestedFieldName: nestedFieldName,
+		MaxSize: g.valRep.MaxSize,
+	}
+	switch v := vr.(type) {
+	case *types.ValueByte:
+		t := `if len(%s) > %d {
+			return ssz.ErrBytesLength
+		}
+		hh.PutBytes(%s)`
+		return fmt.Sprintf(t, fieldName, g.valRep.MaxSize, fieldName)
+	case *types.ValueVector:
+		gv := &generateVector{valRep: v, targetPackage: g.targetPackage}
+		if gv.isByteVector() {
+			lpe.AppendCall = gv.renderByteSliceAppend(nestedFieldName)
+			mtmpl := `numItems := uint64(len(%s))
+		hh.MerkleizeWithMixin(subIndx, numItems, ssz.CalculateLimit(%d, numItems, %d))`
+			lpe.Merkleize = fmt.Sprintf(mtmpl, fieldName, g.valRep.MaxSize, v.FixedSize())
+			return renderHtrListPutter(lpe)
+		}
+	case *types.ValueUint:
+		lpe.AppendCall = fmt.Sprintf("hh.AppendUint%d(%s)", v.Size, nestedFieldName)
+		if v.FixedSize() % ChunkSize != 0 {
+			lpe.PadCall = "\nhh.FillUpTo32()"
+		}
+		mtmpl := `numItems := uint64(len(%s))
+		hh.MerkleizeWithMixin(subIndx, numItems, ssz.CalculateLimit(%d, numItems, %d))`
+		lpe.Merkleize = fmt.Sprintf(mtmpl, fieldName, g.valRep.MaxSize, v.FixedSize())
+		return renderHtrListPutter(lpe)
+	case *types.ValueContainer:
+		gc := newValueGenerator(v, g.targetPackage)
+		lpe.AppendCall = gc.generateHTRPutter(nestedFieldName)
+		lpe.Merkleize = fmt.Sprintf("hh.MerkleizeWithMixin(subIndx, uint64(len(%s)), %d)", fieldName, g.valRep.MaxSize)
+		return renderHtrListPutter(lpe)
+	}
 	return ""
 }
 

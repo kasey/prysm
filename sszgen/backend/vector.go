@@ -104,25 +104,101 @@ func (g *generateVector) generateFixedMarshalValue(fieldName string) string {
 	return string(buf.Bytes())
 }
 
+var generateVectorHTRPutterTmpl = `{
+	if len({{.FieldName}}) != {{.Size}} {
+		return ssz.ErrVectorLength
+	}
+	subIndx := hh.Index()
+	for _, {{.NestedFieldName}} := range {{.FieldName}} {
+		{{.AppendCall}}
+	}
+	{{.Merkleize}}
+}`
+
+type vecPutterElements struct {
+	FieldName string
+	NestedFieldName string
+	Size int
+	AppendCall string
+	Merkleize string
+}
+
+func renderHtrVecPutter(lpe vecPutterElements) string {
+	tmpl, err := template.New("renderHtrVecPutter").Parse(generateVectorHTRPutterTmpl)
+	if err != nil {
+		panic(err)
+	}
+	buf := bytes.NewBuffer(nil)
+	err = tmpl.Execute(buf, lpe)
+	if err != nil {
+		panic(err)
+	}
+	return buf.String()
+}
+
+func (g *generateVector) isByteVector() bool {
+	_, isByte := g.valRep.ElementValue.(*types.ValueByte)
+	return isByte
+}
+
+func (g *generateVector) renderByteSliceAppend(fieldName string) string {
+	t := `if len(%s) != %d {
+	return ssz.ErrBytesLength
+}
+hh.Append(%s)`
+	return fmt.Sprintf(t, fieldName, g.valRep.Size, fieldName)
+}
+
 func (g *generateVector) generateHTRPutter(fieldName string) string {
+	nestedFieldName := "o"
+	if fieldName[0:1] == "o" && monoCharacter(fieldName) {
+		nestedFieldName = fieldName + "o"
+	}
+
+	// resolve pointers and overlays to their underlying types
+	vr := g.valRep.ElementValue
+	if vrp, isPointer := vr.(*types.ValuePointer); isPointer {
+		vr = vrp.Referent
+	}
+	if vro, isOverlay := vr.(*types.ValueOverlay); isOverlay {
+		vr = vro.Underlying
+	}
+
+	vpe := vecPutterElements{
+		FieldName: fieldName,
+		NestedFieldName: nestedFieldName,
+		Size: g.valRep.Size,
+	}
+
 	var putValue string
-	switch g.valRep.ElementValue.(type) {
+	switch v := vr.(type) {
 	case *types.ValueByte:
-		putValue = fmt.Sprintf("hh.PutBytes(%s)", fieldName)
-	default:
-		nestedFieldName := "o"
-		if fieldName[0:1] == "o" && monoCharacter(fieldName) {
-			nestedFieldName = fieldName + "o"
+		t := `if len(%s) != %d {
+			return ssz.ErrBytesLength
 		}
+		hh.PutBytes(%s)`
+		return fmt.Sprintf(t, fieldName, g.valRep.Size, fieldName)
+	case *types.ValueVector:
+		gv := &generateVector{valRep: v, targetPackage: g.targetPackage}
+		if gv.isByteVector() {
+			vpe.AppendCall = gv.renderByteSliceAppend(nestedFieldName)
+			vpe.Merkleize = "hh.Merkleize(subIndx)"
+			return renderHtrVecPutter(vpe)
+		}
+	case *types.ValueUint:
+		vpe.AppendCall = fmt.Sprintf("hh.AppendUint%d(%s)", v.Size, nestedFieldName)
+		vpe.Merkleize = "hh.Merkleize(subIndx)"
+		return renderHtrVecPutter(vpe)
+	default:
 		t := `subIndx := hh.Index()
 for _, %s := range %s {
 	%s
 }
 hh.Merkelize(subIndx)`
 		gg := newValueGenerator(g.valRep.ElementValue, g.targetPackage)
-		internal := gg.generateHTRPutter(nestedFieldName)
-		putValue = fmt.Sprintf(t, nestedFieldName, fieldName, internal)
+		putValue = fmt.Sprintf(t, nestedFieldName, fieldName, gg.generateHTRPutter(nestedFieldName))
 	}
+
 	tmpl := `{
 	if len(%s) != %d {
 		return ssz.ErrVectorLength
