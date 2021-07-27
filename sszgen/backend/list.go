@@ -35,36 +35,6 @@ type listPutterElements struct {
 	Merkleize string
 }
 
-/*
-
-// single []byte example
-	// Field (16) 'CurrentEpochParticipation'
-	if len(b.CurrentEpochParticipation) > 1099511627776 {
-		err = ssz.ErrBytesLength
-		return
-	}
-	hh.PutBytes(b.CurrentEpochParticipation)
-
-// nested [][]byte example (list-vector-byte)
-	// Field (7) 'HistoricalRoots'
-	{
-		if len(b.HistoricalRoots) > 16777216 {
-			err = ssz.ErrListTooBig
-			return
-		}
-		subIndx := hh.Index()
-		for _, i := range b.HistoricalRoots {
-			if len(i) != 32 {
-				err = ssz.ErrBytesLength
-				return
-			}
-			hh.Append(i)
-		}
-		numItems := uint64(len(b.HistoricalRoots))
-		hh.MerkleizeWithMixin(subIndx, numItems, ssz.CalculateLimit(16777216, numItems, 32))
-	}
- */
-
 func renderHtrListPutter(lpe listPutterElements) string {
 	tmpl, err := template.New("renderHtrListPutter").Parse(generateListHTRPutterTmpl)
 	if err != nil {
@@ -128,6 +98,8 @@ func (g *generateList) generateHTRPutter(fieldName string) string {
 		lpe.AppendCall = gc.generateHTRPutter(nestedFieldName)
 		lpe.Merkleize = fmt.Sprintf("hh.MerkleizeWithMixin(subIndx, uint64(len(%s)), %d)", fieldName, g.valRep.MaxSize)
 		return renderHtrListPutter(lpe)
+	default:
+		panic(fmt.Sprintf("unsupported type combination - list of %v", v))
 	}
 	return ""
 }

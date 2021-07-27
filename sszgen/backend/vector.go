@@ -170,7 +170,6 @@ func (g *generateVector) generateHTRPutter(fieldName string) string {
 		Size: g.valRep.Size,
 	}
 
-	var putValue string
 	switch v := vr.(type) {
 	case *types.ValueByte:
 		t := `if len(%s) != %d {
@@ -190,22 +189,9 @@ func (g *generateVector) generateHTRPutter(fieldName string) string {
 		vpe.Merkleize = "hh.Merkleize(subIndx)"
 		return renderHtrVecPutter(vpe)
 	default:
-		t := `subIndx := hh.Index()
-for _, %s := range %s {
-	%s
-}
-hh.Merkelize(subIndx)`
-		gg := newValueGenerator(g.valRep.ElementValue, g.targetPackage)
-		putValue = fmt.Sprintf(t, nestedFieldName, fieldName, gg.generateHTRPutter(nestedFieldName))
+		panic(fmt.Sprintf("unsupported type combination - vector of %v", v))
 	}
-
-	tmpl := `{
-	if len(%s) != %d {
-		return ssz.ErrVectorLength
-	}
-	%s
-}`
-	return fmt.Sprintf(tmpl, fieldName, g.valRep.Size, putValue)
+	return ""
 }
 
 func monoCharacter(s string) bool {
