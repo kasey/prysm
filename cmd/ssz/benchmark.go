@@ -220,8 +220,10 @@ func (tc *TestCase) Roots() (*SSZRoots, error) {
 type ExperimentalSSZ interface {
 	XXUnmarshalSSZ(buf []byte) error
 	XXMarshalSSZ() ([]byte, error)
+	XXHashTreeRoot() ([32]byte, error)
 	fssz.Unmarshaler
 	fssz.Marshaler
+	fssz.HashRoot
 }
 
 type pbinit func() ExperimentalSSZ

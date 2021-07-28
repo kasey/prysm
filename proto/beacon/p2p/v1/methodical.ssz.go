@@ -53,6 +53,30 @@ func (c *BeaconBlocksByRangeRequest) XXUnmarshalSSZ(buf []byte) error {
 	c.Step = ssz.UnmarshallUint64(s2)
 	return err
 }
+
+// HashTreeRoot ssz hashes the BeaconState object
+func (c *BeaconBlocksByRangeRequest) XXHashTreeRoot() ([32]byte, error) {
+	hh := ssz.DefaultHasherPool.Get()
+	if err := c.XXHashTreeRootWith(hh); err != nil {
+		ssz.DefaultHasherPool.Put(hh)
+		return [32]byte{}, err
+	}
+	root, err := hh.HashRoot()
+	ssz.DefaultHasherPool.Put(hh)
+	return root, err
+}
+
+func (c *BeaconBlocksByRangeRequest) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
+	indx := hh.Index()
+	// Field 0: StartSlot
+	hh.PutUint64(uint64(c.StartSlot))
+	// Field 1: Count
+	hh.PutUint64(c.Count)
+	// Field 2: Step
+	hh.PutUint64(c.Step)
+	hh.Merkleize(indx)
+	return nil
+}
 func (c *DepositMessage) XXSizeSSZ() int {
 	size := 88
 
@@ -103,6 +127,36 @@ func (c *DepositMessage) XXUnmarshalSSZ(buf []byte) error {
 	// Field 2: Amount
 	c.Amount = ssz.UnmarshallUint64(s2)
 	return err
+}
+
+// HashTreeRoot ssz hashes the BeaconState object
+func (c *DepositMessage) XXHashTreeRoot() ([32]byte, error) {
+	hh := ssz.DefaultHasherPool.Get()
+	if err := c.XXHashTreeRootWith(hh); err != nil {
+		ssz.DefaultHasherPool.Put(hh)
+		return [32]byte{}, err
+	}
+	root, err := hh.HashRoot()
+	ssz.DefaultHasherPool.Put(hh)
+	return root, err
+}
+
+func (c *DepositMessage) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
+	indx := hh.Index()
+	// Field 0: PublicKey
+	if len(c.PublicKey) != 48 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.PublicKey)
+	// Field 1: WithdrawalCredentials
+	if len(c.WithdrawalCredentials) != 32 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.WithdrawalCredentials)
+	// Field 2: Amount
+	hh.PutUint64(c.Amount)
+	hh.Merkleize(indx)
+	return nil
 }
 func (c *ENRForkID) XXSizeSSZ() int {
 	size := 16
@@ -155,6 +209,36 @@ func (c *ENRForkID) XXUnmarshalSSZ(buf []byte) error {
 	c.NextForkEpoch = prysmaticlabs_eth2_types.Epoch(ssz.UnmarshallUint64(s2))
 	return err
 }
+
+// HashTreeRoot ssz hashes the BeaconState object
+func (c *ENRForkID) XXHashTreeRoot() ([32]byte, error) {
+	hh := ssz.DefaultHasherPool.Get()
+	if err := c.XXHashTreeRootWith(hh); err != nil {
+		ssz.DefaultHasherPool.Put(hh)
+		return [32]byte{}, err
+	}
+	root, err := hh.HashRoot()
+	ssz.DefaultHasherPool.Put(hh)
+	return root, err
+}
+
+func (c *ENRForkID) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
+	indx := hh.Index()
+	// Field 0: CurrentForkDigest
+	if len(c.CurrentForkDigest) != 4 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.CurrentForkDigest)
+	// Field 1: NextForkVersion
+	if len(c.NextForkVersion) != 4 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.NextForkVersion)
+	// Field 2: NextForkEpoch
+	hh.PutUint64(uint64(c.NextForkEpoch))
+	hh.Merkleize(indx)
+	return nil
+}
 func (c *MetaDataV0) XXSizeSSZ() int {
 	size := 16
 
@@ -195,6 +279,31 @@ func (c *MetaDataV0) XXUnmarshalSSZ(buf []byte) error {
 	// Field 1: Attnets
 	c.Attnets = append([]byte{}, prysmaticlabs_go_bitfield.Bitvector64(s1)...)
 	return err
+}
+
+// HashTreeRoot ssz hashes the BeaconState object
+func (c *MetaDataV0) XXHashTreeRoot() ([32]byte, error) {
+	hh := ssz.DefaultHasherPool.Get()
+	if err := c.XXHashTreeRootWith(hh); err != nil {
+		ssz.DefaultHasherPool.Put(hh)
+		return [32]byte{}, err
+	}
+	root, err := hh.HashRoot()
+	ssz.DefaultHasherPool.Put(hh)
+	return root, err
+}
+
+func (c *MetaDataV0) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
+	indx := hh.Index()
+	// Field 0: SeqNumber
+	hh.PutUint64(c.SeqNumber)
+	// Field 1: Attnets
+	if len([]byte(c.Attnets)) != 8 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes([]byte(c.Attnets))
+	hh.Merkleize(indx)
+	return nil
 }
 func (c *MetaDataV1) XXSizeSSZ() int {
 	size := 80
@@ -247,6 +356,36 @@ func (c *MetaDataV1) XXUnmarshalSSZ(buf []byte) error {
 	c.Syncnets = append([]byte{}, prysmaticlabs_go_bitfield.Bitvector512(s2)...)
 	return err
 }
+
+// HashTreeRoot ssz hashes the BeaconState object
+func (c *MetaDataV1) XXHashTreeRoot() ([32]byte, error) {
+	hh := ssz.DefaultHasherPool.Get()
+	if err := c.XXHashTreeRootWith(hh); err != nil {
+		ssz.DefaultHasherPool.Put(hh)
+		return [32]byte{}, err
+	}
+	root, err := hh.HashRoot()
+	ssz.DefaultHasherPool.Put(hh)
+	return root, err
+}
+
+func (c *MetaDataV1) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
+	indx := hh.Index()
+	// Field 0: SeqNumber
+	hh.PutUint64(c.SeqNumber)
+	// Field 1: Attnets
+	if len([]byte(c.Attnets)) != 8 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes([]byte(c.Attnets))
+	// Field 2: Syncnets
+	if len([]byte(c.Syncnets)) != 64 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes([]byte(c.Syncnets))
+	hh.Merkleize(indx)
+	return nil
+}
 func (c *Fork) XXSizeSSZ() int {
 	size := 16
 
@@ -298,6 +437,36 @@ func (c *Fork) XXUnmarshalSSZ(buf []byte) error {
 	c.Epoch = prysmaticlabs_eth2_types.Epoch(ssz.UnmarshallUint64(s2))
 	return err
 }
+
+// HashTreeRoot ssz hashes the BeaconState object
+func (c *Fork) XXHashTreeRoot() ([32]byte, error) {
+	hh := ssz.DefaultHasherPool.Get()
+	if err := c.XXHashTreeRootWith(hh); err != nil {
+		ssz.DefaultHasherPool.Put(hh)
+		return [32]byte{}, err
+	}
+	root, err := hh.HashRoot()
+	ssz.DefaultHasherPool.Put(hh)
+	return root, err
+}
+
+func (c *Fork) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
+	indx := hh.Index()
+	// Field 0: PreviousVersion
+	if len(c.PreviousVersion) != 4 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.PreviousVersion)
+	// Field 1: CurrentVersion
+	if len(c.CurrentVersion) != 4 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.CurrentVersion)
+	// Field 2: Epoch
+	hh.PutUint64(uint64(c.Epoch))
+	hh.Merkleize(indx)
+	return nil
+}
 func (c *ForkData) XXSizeSSZ() int {
 	size := 36
 
@@ -341,6 +510,34 @@ func (c *ForkData) XXUnmarshalSSZ(buf []byte) error {
 	// Field 1: GenesisValidatorsRoot
 	c.GenesisValidatorsRoot = append([]byte{}, s1...)
 	return err
+}
+
+// HashTreeRoot ssz hashes the BeaconState object
+func (c *ForkData) XXHashTreeRoot() ([32]byte, error) {
+	hh := ssz.DefaultHasherPool.Get()
+	if err := c.XXHashTreeRootWith(hh); err != nil {
+		ssz.DefaultHasherPool.Put(hh)
+		return [32]byte{}, err
+	}
+	root, err := hh.HashRoot()
+	ssz.DefaultHasherPool.Put(hh)
+	return root, err
+}
+
+func (c *ForkData) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
+	indx := hh.Index()
+	// Field 0: CurrentVersion
+	if len(c.CurrentVersion) != 4 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.CurrentVersion)
+	// Field 1: GenesisValidatorsRoot
+	if len(c.GenesisValidatorsRoot) != 32 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.GenesisValidatorsRoot)
+	hh.Merkleize(indx)
+	return nil
 }
 func (c *HistoricalBatch) XXSizeSSZ() int {
 	size := 524288
@@ -410,6 +607,52 @@ func (c *HistoricalBatch) XXUnmarshalSSZ(buf []byte) error {
 	}
 	return err
 }
+
+// HashTreeRoot ssz hashes the BeaconState object
+func (c *HistoricalBatch) XXHashTreeRoot() ([32]byte, error) {
+	hh := ssz.DefaultHasherPool.Get()
+	if err := c.XXHashTreeRootWith(hh); err != nil {
+		ssz.DefaultHasherPool.Put(hh)
+		return [32]byte{}, err
+	}
+	root, err := hh.HashRoot()
+	ssz.DefaultHasherPool.Put(hh)
+	return root, err
+}
+
+func (c *HistoricalBatch) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
+	indx := hh.Index()
+	// Field 0: BlockRoots
+	{
+		if len(c.BlockRoots) != 8192 {
+			return ssz.ErrVectorLength
+		}
+		subIndx := hh.Index()
+		for _, o := range c.BlockRoots {
+			if len(o) != 32 {
+				return ssz.ErrBytesLength
+			}
+			hh.Append(o)
+		}
+		hh.Merkleize(subIndx)
+	}
+	// Field 1: StateRoots
+	{
+		if len(c.StateRoots) != 8192 {
+			return ssz.ErrVectorLength
+		}
+		subIndx := hh.Index()
+		for _, o := range c.StateRoots {
+			if len(o) != 32 {
+				return ssz.ErrBytesLength
+			}
+			hh.Append(o)
+		}
+		hh.Merkleize(subIndx)
+	}
+	hh.Merkleize(indx)
+	return nil
+}
 func (c *Status) XXSizeSSZ() int {
 	size := 84
 
@@ -478,6 +721,43 @@ func (c *Status) XXUnmarshalSSZ(buf []byte) error {
 	c.HeadSlot = prysmaticlabs_eth2_types.Slot(ssz.UnmarshallUint64(s4))
 	return err
 }
+
+// HashTreeRoot ssz hashes the BeaconState object
+func (c *Status) XXHashTreeRoot() ([32]byte, error) {
+	hh := ssz.DefaultHasherPool.Get()
+	if err := c.XXHashTreeRootWith(hh); err != nil {
+		ssz.DefaultHasherPool.Put(hh)
+		return [32]byte{}, err
+	}
+	root, err := hh.HashRoot()
+	ssz.DefaultHasherPool.Put(hh)
+	return root, err
+}
+
+func (c *Status) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
+	indx := hh.Index()
+	// Field 0: ForkDigest
+	if len(c.ForkDigest) != 4 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.ForkDigest)
+	// Field 1: FinalizedRoot
+	if len(c.FinalizedRoot) != 32 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.FinalizedRoot)
+	// Field 2: FinalizedEpoch
+	hh.PutUint64(uint64(c.FinalizedEpoch))
+	// Field 3: HeadRoot
+	if len(c.HeadRoot) != 32 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.HeadRoot)
+	// Field 4: HeadSlot
+	hh.PutUint64(uint64(c.HeadSlot))
+	hh.Merkleize(indx)
+	return nil
+}
 func (c *BeaconState) XXSizeSSZ() int {
 	size := 2687377
 	size += len(c.HistoricalRoots) * 32
@@ -527,7 +807,7 @@ func (c *BeaconState) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.Fork == nil {
 		c.Fork = new(Fork)
 	}
-	if dst, err = c.Fork.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.Fork.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -535,7 +815,7 @@ func (c *BeaconState) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.LatestBlockHeader == nil {
 		c.LatestBlockHeader = new(prysmaticlabs_prysm_proto_eth_v1alpha1.BeaconBlockHeader)
 	}
-	if dst, err = c.LatestBlockHeader.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.LatestBlockHeader.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -569,7 +849,7 @@ func (c *BeaconState) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.Eth1Data == nil {
 		c.Eth1Data = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data)
 	}
-	if dst, err = c.Eth1Data.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.Eth1Data.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -639,7 +919,7 @@ func (c *BeaconState) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.PreviousJustifiedCheckpoint == nil {
 		c.PreviousJustifiedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
 	}
-	if dst, err = c.PreviousJustifiedCheckpoint.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.PreviousJustifiedCheckpoint.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -647,7 +927,7 @@ func (c *BeaconState) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.CurrentJustifiedCheckpoint == nil {
 		c.CurrentJustifiedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
 	}
-	if dst, err = c.CurrentJustifiedCheckpoint.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.CurrentJustifiedCheckpoint.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -655,7 +935,7 @@ func (c *BeaconState) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.FinalizedCheckpoint == nil {
 		c.FinalizedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
 	}
-	if dst, err = c.FinalizedCheckpoint.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.FinalizedCheckpoint.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -675,7 +955,7 @@ func (c *BeaconState) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 		return nil, ssz.ErrListTooBig
 	}
 	for _, o := range c.Eth1DataVotes {
-		if dst, err = o.MarshalSSZTo(dst); err != nil {
+		if dst, err = o.XXMarshalSSZTo(dst); err != nil {
 			return nil, err
 		}
 	}
@@ -685,7 +965,7 @@ func (c *BeaconState) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 		return nil, ssz.ErrListTooBig
 	}
 	for _, o := range c.Validators {
-		if dst, err = o.MarshalSSZTo(dst); err != nil {
+		if dst, err = o.XXMarshalSSZTo(dst); err != nil {
 			return nil, err
 		}
 	}
@@ -710,7 +990,7 @@ func (c *BeaconState) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 		}
 	}
 	for _, o := range c.PreviousEpochAttestations {
-		if dst, err = o.MarshalSSZTo(dst); err != nil {
+		if dst, err = o.XXMarshalSSZTo(dst); err != nil {
 			return nil, err
 		}
 	}
@@ -727,7 +1007,7 @@ func (c *BeaconState) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 		}
 	}
 	for _, o := range c.CurrentEpochAttestations {
-		if dst, err = o.MarshalSSZTo(dst); err != nil {
+		if dst, err = o.XXMarshalSSZTo(dst); err != nil {
 			return nil, err
 		}
 	}
@@ -1026,6 +1306,197 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 	}
 	return err
 }
+
+// HashTreeRoot ssz hashes the BeaconState object
+func (c *BeaconState) XXHashTreeRoot() ([32]byte, error) {
+	hh := ssz.DefaultHasherPool.Get()
+	if err := c.XXHashTreeRootWith(hh); err != nil {
+		ssz.DefaultHasherPool.Put(hh)
+		return [32]byte{}, err
+	}
+	root, err := hh.HashRoot()
+	ssz.DefaultHasherPool.Put(hh)
+	return root, err
+}
+
+func (c *BeaconState) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
+	indx := hh.Index()
+	// Field 0: GenesisTime
+	hh.PutUint64(c.GenesisTime)
+	// Field 1: GenesisValidatorsRoot
+	if len(c.GenesisValidatorsRoot) != 32 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.GenesisValidatorsRoot)
+	// Field 2: Slot
+	hh.PutUint64(uint64(c.Slot))
+	// Field 3: Fork
+	if err := c.Fork.HashTreeRootWith(hh); err != nil {
+		return err
+	}
+	// Field 4: LatestBlockHeader
+	if err := c.LatestBlockHeader.HashTreeRootWith(hh); err != nil {
+		return err
+	}
+	// Field 5: BlockRoots
+	{
+		if len(c.BlockRoots) != 8192 {
+			return ssz.ErrVectorLength
+		}
+		subIndx := hh.Index()
+		for _, o := range c.BlockRoots {
+			if len(o) != 32 {
+				return ssz.ErrBytesLength
+			}
+			hh.Append(o)
+		}
+		hh.Merkleize(subIndx)
+	}
+	// Field 6: StateRoots
+	{
+		if len(c.StateRoots) != 8192 {
+			return ssz.ErrVectorLength
+		}
+		subIndx := hh.Index()
+		for _, o := range c.StateRoots {
+			if len(o) != 32 {
+				return ssz.ErrBytesLength
+			}
+			hh.Append(o)
+		}
+		hh.Merkleize(subIndx)
+	}
+	// Field 7: HistoricalRoots
+	{
+		if len(c.HistoricalRoots) > 16777216 {
+			return ssz.ErrListTooBig
+		}
+		subIndx := hh.Index()
+		for _, o := range c.HistoricalRoots {
+			if len(o) != 32 {
+				return ssz.ErrBytesLength
+			}
+			hh.Append(o)
+		}
+		numItems := uint64(len(c.HistoricalRoots))
+		hh.MerkleizeWithMixin(subIndx, numItems, ssz.CalculateLimit(16777216, numItems, 32))
+	}
+	// Field 8: Eth1Data
+	if err := c.Eth1Data.HashTreeRootWith(hh); err != nil {
+		return err
+	}
+	// Field 9: Eth1DataVotes
+	{
+		if len(c.Eth1DataVotes) > 2048 {
+			return ssz.ErrListTooBig
+		}
+		subIndx := hh.Index()
+		for _, o := range c.Eth1DataVotes {
+			if err := o.HashTreeRootWith(hh); err != nil {
+				return err
+			}
+		}
+		hh.MerkleizeWithMixin(subIndx, uint64(len(c.Eth1DataVotes)), 2048)
+	}
+	// Field 10: Eth1DepositIndex
+	hh.PutUint64(c.Eth1DepositIndex)
+	// Field 11: Validators
+	{
+		if len(c.Validators) > 1099511627776 {
+			return ssz.ErrListTooBig
+		}
+		subIndx := hh.Index()
+		for _, o := range c.Validators {
+			if err := o.HashTreeRootWith(hh); err != nil {
+				return err
+			}
+		}
+		hh.MerkleizeWithMixin(subIndx, uint64(len(c.Validators)), 1099511627776)
+	}
+	// Field 12: Balances
+	{
+		if len(c.Balances) > 1099511627776 {
+			return ssz.ErrListTooBig
+		}
+		subIndx := hh.Index()
+		for _, o := range c.Balances {
+			hh.AppendUint64(o)
+		}
+		hh.FillUpTo32()
+		numItems := uint64(len(c.Balances))
+		hh.MerkleizeWithMixin(subIndx, numItems, ssz.CalculateLimit(1099511627776, numItems, 8))
+	}
+	// Field 13: RandaoMixes
+	{
+		if len(c.RandaoMixes) != 65536 {
+			return ssz.ErrVectorLength
+		}
+		subIndx := hh.Index()
+		for _, o := range c.RandaoMixes {
+			if len(o) != 32 {
+				return ssz.ErrBytesLength
+			}
+			hh.Append(o)
+		}
+		hh.Merkleize(subIndx)
+	}
+	// Field 14: Slashings
+	{
+		if len(c.Slashings) != 8192 {
+			return ssz.ErrVectorLength
+		}
+		subIndx := hh.Index()
+		for _, o := range c.Slashings {
+			hh.AppendUint64(o)
+		}
+		hh.Merkleize(subIndx)
+	}
+	// Field 15: PreviousEpochAttestations
+	{
+		if len(c.PreviousEpochAttestations) > 4096 {
+			return ssz.ErrListTooBig
+		}
+		subIndx := hh.Index()
+		for _, o := range c.PreviousEpochAttestations {
+			if err := o.HashTreeRootWith(hh); err != nil {
+				return err
+			}
+		}
+		hh.MerkleizeWithMixin(subIndx, uint64(len(c.PreviousEpochAttestations)), 4096)
+	}
+	// Field 16: CurrentEpochAttestations
+	{
+		if len(c.CurrentEpochAttestations) > 4096 {
+			return ssz.ErrListTooBig
+		}
+		subIndx := hh.Index()
+		for _, o := range c.CurrentEpochAttestations {
+			if err := o.HashTreeRootWith(hh); err != nil {
+				return err
+			}
+		}
+		hh.MerkleizeWithMixin(subIndx, uint64(len(c.CurrentEpochAttestations)), 4096)
+	}
+	// Field 17: JustificationBits
+	if len([]byte(c.JustificationBits)) != 1 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes([]byte(c.JustificationBits))
+	// Field 18: PreviousJustifiedCheckpoint
+	if err := c.PreviousJustifiedCheckpoint.HashTreeRootWith(hh); err != nil {
+		return err
+	}
+	// Field 19: CurrentJustifiedCheckpoint
+	if err := c.CurrentJustifiedCheckpoint.HashTreeRootWith(hh); err != nil {
+		return err
+	}
+	// Field 20: FinalizedCheckpoint
+	if err := c.FinalizedCheckpoint.HashTreeRootWith(hh); err != nil {
+		return err
+	}
+	hh.Merkleize(indx)
+	return nil
+}
 func (c *BeaconStateAltair) XXSizeSSZ() int {
 	size := 2736629
 	size += len(c.HistoricalRoots) * 32
@@ -1062,7 +1533,7 @@ func (c *BeaconStateAltair) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.Fork == nil {
 		c.Fork = new(Fork)
 	}
-	if dst, err = c.Fork.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.Fork.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -1070,7 +1541,7 @@ func (c *BeaconStateAltair) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.LatestBlockHeader == nil {
 		c.LatestBlockHeader = new(prysmaticlabs_prysm_proto_eth_v1alpha1.BeaconBlockHeader)
 	}
-	if dst, err = c.LatestBlockHeader.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.LatestBlockHeader.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -1104,7 +1575,7 @@ func (c *BeaconStateAltair) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.Eth1Data == nil {
 		c.Eth1Data = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data)
 	}
-	if dst, err = c.Eth1Data.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.Eth1Data.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -1160,7 +1631,7 @@ func (c *BeaconStateAltair) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.PreviousJustifiedCheckpoint == nil {
 		c.PreviousJustifiedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
 	}
-	if dst, err = c.PreviousJustifiedCheckpoint.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.PreviousJustifiedCheckpoint.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -1168,7 +1639,7 @@ func (c *BeaconStateAltair) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.CurrentJustifiedCheckpoint == nil {
 		c.CurrentJustifiedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
 	}
-	if dst, err = c.CurrentJustifiedCheckpoint.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.CurrentJustifiedCheckpoint.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -1176,7 +1647,7 @@ func (c *BeaconStateAltair) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.FinalizedCheckpoint == nil {
 		c.FinalizedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
 	}
-	if dst, err = c.FinalizedCheckpoint.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.FinalizedCheckpoint.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -1188,7 +1659,7 @@ func (c *BeaconStateAltair) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.CurrentSyncCommittee == nil {
 		c.CurrentSyncCommittee = new(SyncCommittee)
 	}
-	if dst, err = c.CurrentSyncCommittee.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.CurrentSyncCommittee.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -1196,7 +1667,7 @@ func (c *BeaconStateAltair) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.NextSyncCommittee == nil {
 		c.NextSyncCommittee = new(SyncCommittee)
 	}
-	if dst, err = c.NextSyncCommittee.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.NextSyncCommittee.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -1216,7 +1687,7 @@ func (c *BeaconStateAltair) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 		return nil, ssz.ErrListTooBig
 	}
 	for _, o := range c.Eth1DataVotes {
-		if dst, err = o.MarshalSSZTo(dst); err != nil {
+		if dst, err = o.XXMarshalSSZTo(dst); err != nil {
 			return nil, err
 		}
 	}
@@ -1226,7 +1697,7 @@ func (c *BeaconStateAltair) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 		return nil, ssz.ErrListTooBig
 	}
 	for _, o := range c.Validators {
-		if dst, err = o.MarshalSSZTo(dst); err != nil {
+		if dst, err = o.XXMarshalSSZTo(dst); err != nil {
 			return nil, err
 		}
 	}
@@ -1528,6 +1999,202 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 	}
 	return err
 }
+
+// HashTreeRoot ssz hashes the BeaconState object
+func (c *BeaconStateAltair) XXHashTreeRoot() ([32]byte, error) {
+	hh := ssz.DefaultHasherPool.Get()
+	if err := c.XXHashTreeRootWith(hh); err != nil {
+		ssz.DefaultHasherPool.Put(hh)
+		return [32]byte{}, err
+	}
+	root, err := hh.HashRoot()
+	ssz.DefaultHasherPool.Put(hh)
+	return root, err
+}
+
+func (c *BeaconStateAltair) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
+	indx := hh.Index()
+	// Field 0: GenesisTime
+	hh.PutUint64(c.GenesisTime)
+	// Field 1: GenesisValidatorsRoot
+	if len(c.GenesisValidatorsRoot) != 32 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.GenesisValidatorsRoot)
+	// Field 2: Slot
+	hh.PutUint64(uint64(c.Slot))
+	// Field 3: Fork
+	if err := c.Fork.HashTreeRootWith(hh); err != nil {
+		return err
+	}
+	// Field 4: LatestBlockHeader
+	if err := c.LatestBlockHeader.HashTreeRootWith(hh); err != nil {
+		return err
+	}
+	// Field 5: BlockRoots
+	{
+		if len(c.BlockRoots) != 8192 {
+			return ssz.ErrVectorLength
+		}
+		subIndx := hh.Index()
+		for _, o := range c.BlockRoots {
+			if len(o) != 32 {
+				return ssz.ErrBytesLength
+			}
+			hh.Append(o)
+		}
+		hh.Merkleize(subIndx)
+	}
+	// Field 6: StateRoots
+	{
+		if len(c.StateRoots) != 8192 {
+			return ssz.ErrVectorLength
+		}
+		subIndx := hh.Index()
+		for _, o := range c.StateRoots {
+			if len(o) != 32 {
+				return ssz.ErrBytesLength
+			}
+			hh.Append(o)
+		}
+		hh.Merkleize(subIndx)
+	}
+	// Field 7: HistoricalRoots
+	{
+		if len(c.HistoricalRoots) > 16777216 {
+			return ssz.ErrListTooBig
+		}
+		subIndx := hh.Index()
+		for _, o := range c.HistoricalRoots {
+			if len(o) != 32 {
+				return ssz.ErrBytesLength
+			}
+			hh.Append(o)
+		}
+		numItems := uint64(len(c.HistoricalRoots))
+		hh.MerkleizeWithMixin(subIndx, numItems, ssz.CalculateLimit(16777216, numItems, 32))
+	}
+	// Field 8: Eth1Data
+	if err := c.Eth1Data.HashTreeRootWith(hh); err != nil {
+		return err
+	}
+	// Field 9: Eth1DataVotes
+	{
+		if len(c.Eth1DataVotes) > 2048 {
+			return ssz.ErrListTooBig
+		}
+		subIndx := hh.Index()
+		for _, o := range c.Eth1DataVotes {
+			if err := o.HashTreeRootWith(hh); err != nil {
+				return err
+			}
+		}
+		hh.MerkleizeWithMixin(subIndx, uint64(len(c.Eth1DataVotes)), 2048)
+	}
+	// Field 10: Eth1DepositIndex
+	hh.PutUint64(c.Eth1DepositIndex)
+	// Field 11: Validators
+	{
+		if len(c.Validators) > 1099511627776 {
+			return ssz.ErrListTooBig
+		}
+		subIndx := hh.Index()
+		for _, o := range c.Validators {
+			if err := o.HashTreeRootWith(hh); err != nil {
+				return err
+			}
+		}
+		hh.MerkleizeWithMixin(subIndx, uint64(len(c.Validators)), 1099511627776)
+	}
+	// Field 12: Balances
+	{
+		if len(c.Balances) > 1099511627776 {
+			return ssz.ErrListTooBig
+		}
+		subIndx := hh.Index()
+		for _, o := range c.Balances {
+			hh.AppendUint64(o)
+		}
+		hh.FillUpTo32()
+		numItems := uint64(len(c.Balances))
+		hh.MerkleizeWithMixin(subIndx, numItems, ssz.CalculateLimit(1099511627776, numItems, 8))
+	}
+	// Field 13: RandaoMixes
+	{
+		if len(c.RandaoMixes) != 65536 {
+			return ssz.ErrVectorLength
+		}
+		subIndx := hh.Index()
+		for _, o := range c.RandaoMixes {
+			if len(o) != 32 {
+				return ssz.ErrBytesLength
+			}
+			hh.Append(o)
+		}
+		hh.Merkleize(subIndx)
+	}
+	// Field 14: Slashings
+	{
+		if len(c.Slashings) != 8192 {
+			return ssz.ErrVectorLength
+		}
+		subIndx := hh.Index()
+		for _, o := range c.Slashings {
+			hh.AppendUint64(o)
+		}
+		hh.Merkleize(subIndx)
+	}
+	// Field 15: PreviousEpochParticipation
+	if len(c.PreviousEpochParticipation) > 1099511627776 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.PreviousEpochParticipation)
+	// Field 16: CurrentEpochParticipation
+	if len(c.CurrentEpochParticipation) > 1099511627776 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.CurrentEpochParticipation)
+	// Field 17: JustificationBits
+	if len([]byte(c.JustificationBits)) != 1 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes([]byte(c.JustificationBits))
+	// Field 18: PreviousJustifiedCheckpoint
+	if err := c.PreviousJustifiedCheckpoint.HashTreeRootWith(hh); err != nil {
+		return err
+	}
+	// Field 19: CurrentJustifiedCheckpoint
+	if err := c.CurrentJustifiedCheckpoint.HashTreeRootWith(hh); err != nil {
+		return err
+	}
+	// Field 20: FinalizedCheckpoint
+	if err := c.FinalizedCheckpoint.HashTreeRootWith(hh); err != nil {
+		return err
+	}
+	// Field 21: InactivityScores
+	{
+		if len(c.InactivityScores) > 1099511627776 {
+			return ssz.ErrListTooBig
+		}
+		subIndx := hh.Index()
+		for _, o := range c.InactivityScores {
+			hh.AppendUint64(o)
+		}
+		hh.FillUpTo32()
+		numItems := uint64(len(c.InactivityScores))
+		hh.MerkleizeWithMixin(subIndx, numItems, ssz.CalculateLimit(1099511627776, numItems, 8))
+	}
+	// Field 22: CurrentSyncCommittee
+	if err := c.CurrentSyncCommittee.HashTreeRootWith(hh); err != nil {
+		return err
+	}
+	// Field 23: NextSyncCommittee
+	if err := c.NextSyncCommittee.HashTreeRootWith(hh); err != nil {
+		return err
+	}
+	hh.Merkleize(indx)
+	return nil
+}
 func (c *PendingAttestation) XXSizeSSZ() int {
 	size := 148
 
@@ -1550,7 +2217,7 @@ func (c *PendingAttestation) XXMarshalSSZTo(dst []byte) ([]byte, error) {
 	if c.Data == nil {
 		c.Data = new(prysmaticlabs_prysm_proto_eth_v1alpha1.AttestationData)
 	}
-	if dst, err = c.Data.MarshalSSZTo(dst); err != nil {
+	if dst, err = c.Data.XXMarshalSSZTo(dst); err != nil {
 		return nil, err
 	}
 
@@ -1606,6 +2273,37 @@ func (c *PendingAttestation) XXUnmarshalSSZ(buf []byte) error {
 	c.ProposerIndex = prysmaticlabs_eth2_types.ValidatorIndex(ssz.UnmarshallUint64(s3))
 	return err
 }
+
+// HashTreeRoot ssz hashes the BeaconState object
+func (c *PendingAttestation) XXHashTreeRoot() ([32]byte, error) {
+	hh := ssz.DefaultHasherPool.Get()
+	if err := c.XXHashTreeRootWith(hh); err != nil {
+		ssz.DefaultHasherPool.Put(hh)
+		return [32]byte{}, err
+	}
+	root, err := hh.HashRoot()
+	ssz.DefaultHasherPool.Put(hh)
+	return root, err
+}
+
+func (c *PendingAttestation) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
+	indx := hh.Index()
+	// Field 0: AggregationBits
+	if len(c.AggregationBits) == 0 {
+		return ssz.ErrEmptyBitlist
+	}
+	hh.PutBitlist(c.AggregationBits, 2048)
+	// Field 1: Data
+	if err := c.Data.HashTreeRootWith(hh); err != nil {
+		return err
+	}
+	// Field 2: InclusionDelay
+	hh.PutUint64(uint64(c.InclusionDelay))
+	// Field 3: ProposerIndex
+	hh.PutUint64(uint64(c.ProposerIndex))
+	hh.Merkleize(indx)
+	return nil
+}
 func (c *SigningData) XXSizeSSZ() int {
 	size := 64
 
@@ -1649,6 +2347,34 @@ func (c *SigningData) XXUnmarshalSSZ(buf []byte) error {
 	// Field 1: Domain
 	c.Domain = append([]byte{}, s1...)
 	return err
+}
+
+// HashTreeRoot ssz hashes the BeaconState object
+func (c *SigningData) XXHashTreeRoot() ([32]byte, error) {
+	hh := ssz.DefaultHasherPool.Get()
+	if err := c.XXHashTreeRootWith(hh); err != nil {
+		ssz.DefaultHasherPool.Put(hh)
+		return [32]byte{}, err
+	}
+	root, err := hh.HashRoot()
+	ssz.DefaultHasherPool.Put(hh)
+	return root, err
+}
+
+func (c *SigningData) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
+	indx := hh.Index()
+	// Field 0: ObjectRoot
+	if len(c.ObjectRoot) != 32 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.ObjectRoot)
+	// Field 1: Domain
+	if len(c.Domain) != 32 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.Domain)
+	hh.Merkleize(indx)
+	return nil
 }
 func (c *SyncCommittee) XXSizeSSZ() int {
 	size := 24624
@@ -1706,6 +2432,43 @@ func (c *SyncCommittee) XXUnmarshalSSZ(buf []byte) error {
 	c.AggregatePubkey = append([]byte{}, s1...)
 	return err
 }
+
+// HashTreeRoot ssz hashes the BeaconState object
+func (c *SyncCommittee) XXHashTreeRoot() ([32]byte, error) {
+	hh := ssz.DefaultHasherPool.Get()
+	if err := c.XXHashTreeRootWith(hh); err != nil {
+		ssz.DefaultHasherPool.Put(hh)
+		return [32]byte{}, err
+	}
+	root, err := hh.HashRoot()
+	ssz.DefaultHasherPool.Put(hh)
+	return root, err
+}
+
+func (c *SyncCommittee) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
+	indx := hh.Index()
+	// Field 0: Pubkeys
+	{
+		if len(c.Pubkeys) != 512 {
+			return ssz.ErrVectorLength
+		}
+		subIndx := hh.Index()
+		for _, o := range c.Pubkeys {
+			if len(o) != 48 {
+				return ssz.ErrBytesLength
+			}
+			hh.Append(o)
+		}
+		hh.Merkleize(subIndx)
+	}
+	// Field 1: AggregatePubkey
+	if len(c.AggregatePubkey) != 48 {
+		return ssz.ErrBytesLength
+	}
+	hh.PutBytes(c.AggregatePubkey)
+	hh.Merkleize(indx)
+	return nil
+}
 func (c *SyncAggregatorSelectionData) XXSizeSSZ() int {
 	size := 16
 
@@ -1743,4 +2506,26 @@ func (c *SyncAggregatorSelectionData) XXUnmarshalSSZ(buf []byte) error {
 	// Field 1: SubcommitteeIndex
 	c.SubcommitteeIndex = ssz.UnmarshallUint64(s1)
 	return err
+}
+
+// HashTreeRoot ssz hashes the BeaconState object
+func (c *SyncAggregatorSelectionData) XXHashTreeRoot() ([32]byte, error) {
+	hh := ssz.DefaultHasherPool.Get()
+	if err := c.XXHashTreeRootWith(hh); err != nil {
+		ssz.DefaultHasherPool.Put(hh)
+		return [32]byte{}, err
+	}
+	root, err := hh.HashRoot()
+	ssz.DefaultHasherPool.Put(hh)
+	return root, err
+}
+
+func (c *SyncAggregatorSelectionData) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
+	indx := hh.Index()
+	// Field 0: Slot
+	hh.PutUint64(uint64(c.Slot))
+	// Field 1: SubcommitteeIndex
+	hh.PutUint64(c.SubcommitteeIndex)
+	hh.Merkleize(indx)
+	return nil
 }

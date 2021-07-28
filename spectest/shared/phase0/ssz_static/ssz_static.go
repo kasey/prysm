@@ -51,25 +51,17 @@ func RunSSZStaticTests(t *testing.T, config string) {
 				require.NoError(t, utils.UnmarshalYaml(rootsYamlFile, rootsYaml), "Failed to Unmarshal")
 
 				// Custom hash tree root for beacon state.
-				var htr func(interface{}) ([32]byte, error)
-				if _, ok := object.(*pb.BeaconState); ok {
-					htr = func(s interface{}) ([32]byte, error) {
-						beaconState, err := v1.InitializeFromProto(s.(*pb.BeaconState))
+				var root [32]byte
+				if specialBS, ok := object.(*pb.BeaconState); ok {
+						beaconState, err := v1.InitializeFromProto(specialBS)
 						require.NoError(t, err)
-						return beaconState.HashTreeRoot(context.Background())
-					}
+						root, err = beaconState.HashTreeRoot(context.Background())
+						require.NoError(t, err)
 				} else {
-					htr = func(s interface{}) ([32]byte, error) {
-						sszObj, ok := s.(fssz.HashRoot)
-						if !ok {
-							return [32]byte{}, errors.New("could not get hash root, not compatible object")
-						}
-						return sszObj.HashTreeRoot()
-					}
+					root, err = object.XXHashTreeRoot()
+					require.NoError(t, err)
 				}
 
-				root, err := htr(object)
-				require.NoError(t, err)
 				rootBytes, err := hex.DecodeString(rootsYaml.Root[2:])
 				require.NoError(t, err)
 				require.DeepEqual(t, rootBytes, root[:], "Did not receive expected hash tree root")
@@ -79,11 +71,7 @@ func RunSSZStaticTests(t *testing.T, config string) {
 				}
 
 				var signingRoot [32]byte
-				if v, ok := object.(fssz.HashRoot); ok {
-					signingRoot, err = v.HashTreeRoot()
-				} else {
-					t.Fatal("object does not meet fssz.HashRoot")
-				}
+				signingRoot, err = object.XXHashTreeRoot()
 
 				require.NoError(t, err)
 				signingRootBytes, err := hex.DecodeString(rootsYaml.SigningRoot[2:])
@@ -97,10 +85,13 @@ func RunSSZStaticTests(t *testing.T, config string) {
 type ExperimentalSSZ interface {
 	XXUnmarshalSSZ(buf []byte) error
 	XXMarshalSSZ() ([]byte, error)
+	XXHashTreeRoot() ([32]byte, error)
+	fssz.Marshaler
 	fssz.Unmarshaler
+	fssz.HashRoot
 }
 
-func GetInstanceByName(name string) (interface{}, error) {
+func GetInstanceByName(name string) (ExperimentalSSZ, error) {
 	switch name {
 	case "Attestation":
 		return &ethpb.Attestation{}, nil
@@ -160,7 +151,7 @@ func GetInstanceByName(name string) (interface{}, error) {
 }
 
 // UnmarshalledSSZ unmarshalls serialized input.
-func UnmarshalledSSZ(serializedBytes []byte, folderName string) (interface{}, error) {
+func UnmarshalledSSZ(serializedBytes []byte, folderName string) (ExperimentalSSZ, error) {
 	obj, err := GetInstanceByName(folderName)
 	if err != nil {
 		return nil, err
@@ -171,23 +162,19 @@ func UnmarshalledSSZ(serializedBytes []byte, folderName string) (interface{}, er
 	}
 	err = o.XXUnmarshalSSZ(serializedBytes)
 	if err != nil {
-			  return nil, err
-			  }
+		return nil, err
+	}
 	marshalled, err := o.XXMarshalSSZ()
 	if err != nil {
-			  return nil, err
-			  }
+		return nil, err
+	}
 
 	// get a new instance for unmarshaling
 	obj, err = GetInstanceByName(folderName)
 	if err != nil {
-			  return nil, err
-			  }
-	oo, ok := obj.(fssz.Unmarshaler)
-	if !ok {
-	   return nil, fmt.Errorf("%s implements ExperimentalSSZ but not fssz.Unmarshaler?", folderName)
-	   }
+		return nil, err
+	}
 	// make sure we can unmarshal with fastssz code
-	err = oo.UnmarshalSSZ(marshalled)
-	return oo, err
+	err = obj.XXUnmarshalSSZ(marshalled)
+	return obj, err
 }
