@@ -70,12 +70,16 @@ func (g *Generator) Generate(vr types.ValRep) {
 		g.gc = append(g.gc, sizeSSZ)
 	}
 	mSSZ := GenerateMarshalSSZ(gc)
-	if sizeSSZ != nil {
+	if mSSZ != nil {
 		g.gc = append(g.gc, mSSZ)
 	}
 	uSSZ := GenerateUnmarshalSSZ(gc)
-	if sizeSSZ != nil {
+	if uSSZ != nil {
 		g.gc = append(g.gc, uSSZ)
+	}
+	hSSZ := GenerateHashTreeRoot(gc)
+	if hSSZ != nil {
+		g.gc = append(g.gc, hSSZ)
 	}
 }
 

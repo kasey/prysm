@@ -15,7 +15,7 @@ const ChunkSize = 32
 var htrTmpl = `// HashTreeRoot ssz hashes the BeaconState object
 func ({{.Receiver}} {{.Type}}) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
-	if err := b.HashTreeRootWith(hh); err != nil {
+	if err := {{.Receiver}}.XXHashTreeRootWith(hh); err != nil {
 		ssz.DefaultHasherPool.Put(hh)
 		return [32]byte{}, err
 	}

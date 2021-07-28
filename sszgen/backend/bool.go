@@ -12,7 +12,7 @@ type generateBool struct {
 }
 
 func (g *generateBool) generateHTRPutter(fieldName string) string {
-	return ""
+	return fmt.Sprintf("hh.PutBool(%s)", fieldName)
 }
 
 func (g *generateBool) coerce() func(string) string {
