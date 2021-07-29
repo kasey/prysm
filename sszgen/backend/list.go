@@ -112,12 +112,13 @@ var generateListGenerateUnmarshalValueFixedTmpl = `{
 	if numElem > {{ .MaxSize }} {
 		return fmt.Errorf("ssz-max exceeded: {{.FieldName}} has %d elements, ssz-max is {{.MaxSize}}", numElem)
 	}
+	{{.FieldName}} = make([]{{.TypeName}}, numElem)
 	for {{.LoopVar}} := 0; {{.LoopVar}} < numElem; {{.LoopVar}}++ {
 		var tmp {{.TypeName}}
 		{{.Initializer}}
 		tmpSlice := {{.SliceName}}[{{.LoopVar}}*{{.NestedFixedSize}}:(1+{{.LoopVar}})*{{.NestedFixedSize}}]
 	{{.NestedUnmarshal}}
-		{{.FieldName}} = append({{.FieldName}}, tmp)
+		{{.FieldName}}[{{.LoopVar}}] = tmp
 	}
 }`
 
@@ -137,6 +138,7 @@ if len({{.SliceName}}) > 3 {
 	for {{.LoopVar}} := 0; uint64({{.LoopVar}}) < listLen; {{.LoopVar}}++ {
 		listOffsets[{{.LoopVar}}] = ssz.ReadOffset({{.SliceName}}[{{.LoopVar}}*4:({{.LoopVar}}+1)*4])
 	}
+	{{.FieldName}} = make([]{{.TypeName}}, len(listOffsets))
 	for {{.LoopVar}} := 0; {{.LoopVar}} < len(listOffsets); {{.LoopVar}}++ {
 			var tmp {{.TypeName}}
 			{{.Initializer}}
@@ -147,7 +149,7 @@ if len({{.SliceName}}) > 3 {
 				tmpSlice = {{.SliceName}}[listOffsets[{{.LoopVar}}]:listOffsets[{{.LoopVar}}+1]]
 			}
 		{{.NestedUnmarshal}}
-			{{.FieldName}} = append({{.FieldName}}, tmp)
+			{{.FieldName}}[{{.LoopVar}}] = tmp
 	}
 }
 }`

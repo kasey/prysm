@@ -765,6 +765,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 		if numElem > 16 {
 			return fmt.Errorf("ssz-max exceeded: c.ProposerSlashings has %d elements, ssz-max is 16", numElem)
 		}
+		c.ProposerSlashings = make([]*ProposerSlashing, numElem)
 		for i := 0; i < numElem; i++ {
 			var tmp *ProposerSlashing
 			tmp = new(ProposerSlashing)
@@ -772,7 +773,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
 				return err
 			}
-			c.ProposerSlashings = append(c.ProposerSlashings, tmp)
+			c.ProposerSlashings[i] = tmp
 		}
 	}
 
@@ -793,6 +794,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 			for i := 0; uint64(i) < listLen; i++ {
 				listOffsets[i] = ssz.ReadOffset(s4[i*4 : (i+1)*4])
 			}
+			c.AttesterSlashings = make([]*AttesterSlashing, len(listOffsets))
 			for i := 0; i < len(listOffsets); i++ {
 				var tmp *AttesterSlashing
 				tmp = new(AttesterSlashing)
@@ -805,7 +807,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 				if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
 					return err
 				}
-				c.AttesterSlashings = append(c.AttesterSlashings, tmp)
+				c.AttesterSlashings[i] = tmp
 			}
 		}
 	}
@@ -827,6 +829,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 			for i := 0; uint64(i) < listLen; i++ {
 				listOffsets[i] = ssz.ReadOffset(s5[i*4 : (i+1)*4])
 			}
+			c.Attestations = make([]*Attestation, len(listOffsets))
 			for i := 0; i < len(listOffsets); i++ {
 				var tmp *Attestation
 				tmp = new(Attestation)
@@ -839,7 +842,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 				if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
 					return err
 				}
-				c.Attestations = append(c.Attestations, tmp)
+				c.Attestations[i] = tmp
 			}
 		}
 	}
@@ -853,6 +856,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 		if numElem > 16 {
 			return fmt.Errorf("ssz-max exceeded: c.Deposits has %d elements, ssz-max is 16", numElem)
 		}
+		c.Deposits = make([]*Deposit, numElem)
 		for i := 0; i < numElem; i++ {
 			var tmp *Deposit
 			tmp = new(Deposit)
@@ -860,7 +864,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
 				return err
 			}
-			c.Deposits = append(c.Deposits, tmp)
+			c.Deposits[i] = tmp
 		}
 	}
 
@@ -873,6 +877,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 		if numElem > 16 {
 			return fmt.Errorf("ssz-max exceeded: c.VoluntaryExits has %d elements, ssz-max is 16", numElem)
 		}
+		c.VoluntaryExits = make([]*SignedVoluntaryExit, numElem)
 		for i := 0; i < numElem; i++ {
 			var tmp *SignedVoluntaryExit
 			tmp = new(SignedVoluntaryExit)
@@ -880,7 +885,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
 				return err
 			}
-			c.VoluntaryExits = append(c.VoluntaryExits, tmp)
+			c.VoluntaryExits[i] = tmp
 		}
 	}
 	return err
@@ -1495,12 +1500,13 @@ func (c *IndexedAttestation) XXUnmarshalSSZ(buf []byte) error {
 		if numElem > 2048 {
 			return fmt.Errorf("ssz-max exceeded: c.AttestingIndices has %d elements, ssz-max is 2048", numElem)
 		}
+		c.AttestingIndices = make([]uint64, numElem)
 		for i := 0; i < numElem; i++ {
 			var tmp uint64
 
 			tmpSlice := s0[i*8 : (1+i)*8]
 			tmp = ssz.UnmarshallUint64(tmpSlice)
-			c.AttestingIndices = append(c.AttestingIndices, tmp)
+			c.AttestingIndices[i] = tmp
 		}
 	}
 

@@ -1125,13 +1125,14 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 		if numElem > 16777216 {
 			return fmt.Errorf("ssz-max exceeded: c.HistoricalRoots has %d elements, ssz-max is 16777216", numElem)
 		}
+		c.HistoricalRoots = make([][]byte, numElem)
 		for i := 0; i < numElem; i++ {
 			var tmp []byte
 
 			tmpSlice := s7[i*32 : (1+i)*32]
 			tmp = make([]byte, 0, 32)
 			tmp = append(tmp, tmpSlice...)
-			c.HistoricalRoots = append(c.HistoricalRoots, tmp)
+			c.HistoricalRoots[i] = tmp
 		}
 	}
 
@@ -1150,6 +1151,7 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 		if numElem > 2048 {
 			return fmt.Errorf("ssz-max exceeded: c.Eth1DataVotes has %d elements, ssz-max is 2048", numElem)
 		}
+		c.Eth1DataVotes = make([]*prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data, numElem)
 		for i := 0; i < numElem; i++ {
 			var tmp *prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data
 			tmp = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data)
@@ -1157,7 +1159,7 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
 				return err
 			}
-			c.Eth1DataVotes = append(c.Eth1DataVotes, tmp)
+			c.Eth1DataVotes[i] = tmp
 		}
 	}
 
@@ -1173,6 +1175,7 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 		if numElem > 1099511627776 {
 			return fmt.Errorf("ssz-max exceeded: c.Validators has %d elements, ssz-max is 1099511627776", numElem)
 		}
+		c.Validators = make([]*prysmaticlabs_prysm_proto_eth_v1alpha1.Validator, numElem)
 		for i := 0; i < numElem; i++ {
 			var tmp *prysmaticlabs_prysm_proto_eth_v1alpha1.Validator
 			tmp = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Validator)
@@ -1180,7 +1183,7 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
 				return err
 			}
-			c.Validators = append(c.Validators, tmp)
+			c.Validators[i] = tmp
 		}
 	}
 
@@ -1193,12 +1196,13 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 		if numElem > 1099511627776 {
 			return fmt.Errorf("ssz-max exceeded: c.Balances has %d elements, ssz-max is 1099511627776", numElem)
 		}
+		c.Balances = make([]uint64, numElem)
 		for i := 0; i < numElem; i++ {
 			var tmp uint64
 
 			tmpSlice := s12[i*8 : (1+i)*8]
 			tmp = ssz.UnmarshallUint64(tmpSlice)
-			c.Balances = append(c.Balances, tmp)
+			c.Balances[i] = tmp
 		}
 	}
 
@@ -1242,6 +1246,7 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 			for i := 0; uint64(i) < listLen; i++ {
 				listOffsets[i] = ssz.ReadOffset(s15[i*4 : (i+1)*4])
 			}
+			c.PreviousEpochAttestations = make([]*PendingAttestation, len(listOffsets))
 			for i := 0; i < len(listOffsets); i++ {
 				var tmp *PendingAttestation
 				tmp = new(PendingAttestation)
@@ -1254,7 +1259,7 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 				if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
 					return err
 				}
-				c.PreviousEpochAttestations = append(c.PreviousEpochAttestations, tmp)
+				c.PreviousEpochAttestations[i] = tmp
 			}
 		}
 	}
@@ -1276,6 +1281,7 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 			for i := 0; uint64(i) < listLen; i++ {
 				listOffsets[i] = ssz.ReadOffset(s16[i*4 : (i+1)*4])
 			}
+			c.CurrentEpochAttestations = make([]*PendingAttestation, len(listOffsets))
 			for i := 0; i < len(listOffsets); i++ {
 				var tmp *PendingAttestation
 				tmp = new(PendingAttestation)
@@ -1288,7 +1294,7 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 				if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
 					return err
 				}
-				c.CurrentEpochAttestations = append(c.CurrentEpochAttestations, tmp)
+				c.CurrentEpochAttestations[i] = tmp
 			}
 		}
 	}
@@ -1858,13 +1864,14 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 		if numElem > 16777216 {
 			return fmt.Errorf("ssz-max exceeded: c.HistoricalRoots has %d elements, ssz-max is 16777216", numElem)
 		}
+		c.HistoricalRoots = make([][]byte, numElem)
 		for i := 0; i < numElem; i++ {
 			var tmp []byte
 
 			tmpSlice := s7[i*32 : (1+i)*32]
 			tmp = make([]byte, 0, 32)
 			tmp = append(tmp, tmpSlice...)
-			c.HistoricalRoots = append(c.HistoricalRoots, tmp)
+			c.HistoricalRoots[i] = tmp
 		}
 	}
 
@@ -1883,6 +1890,7 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 		if numElem > 2048 {
 			return fmt.Errorf("ssz-max exceeded: c.Eth1DataVotes has %d elements, ssz-max is 2048", numElem)
 		}
+		c.Eth1DataVotes = make([]*prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data, numElem)
 		for i := 0; i < numElem; i++ {
 			var tmp *prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data
 			tmp = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data)
@@ -1890,7 +1898,7 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
 				return err
 			}
-			c.Eth1DataVotes = append(c.Eth1DataVotes, tmp)
+			c.Eth1DataVotes[i] = tmp
 		}
 	}
 
@@ -1906,6 +1914,7 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 		if numElem > 1099511627776 {
 			return fmt.Errorf("ssz-max exceeded: c.Validators has %d elements, ssz-max is 1099511627776", numElem)
 		}
+		c.Validators = make([]*prysmaticlabs_prysm_proto_eth_v1alpha1.Validator, numElem)
 		for i := 0; i < numElem; i++ {
 			var tmp *prysmaticlabs_prysm_proto_eth_v1alpha1.Validator
 			tmp = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Validator)
@@ -1913,7 +1922,7 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
 				return err
 			}
-			c.Validators = append(c.Validators, tmp)
+			c.Validators[i] = tmp
 		}
 	}
 
@@ -1926,12 +1935,13 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 		if numElem > 1099511627776 {
 			return fmt.Errorf("ssz-max exceeded: c.Balances has %d elements, ssz-max is 1099511627776", numElem)
 		}
+		c.Balances = make([]uint64, numElem)
 		for i := 0; i < numElem; i++ {
 			var tmp uint64
 
 			tmpSlice := s12[i*8 : (1+i)*8]
 			tmp = ssz.UnmarshallUint64(tmpSlice)
-			c.Balances = append(c.Balances, tmp)
+			c.Balances[i] = tmp
 		}
 	}
 
@@ -1995,12 +2005,13 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 		if numElem > 1099511627776 {
 			return fmt.Errorf("ssz-max exceeded: c.InactivityScores has %d elements, ssz-max is 1099511627776", numElem)
 		}
+		c.InactivityScores = make([]uint64, numElem)
 		for i := 0; i < numElem; i++ {
 			var tmp uint64
 
 			tmpSlice := s21[i*8 : (1+i)*8]
 			tmp = ssz.UnmarshallUint64(tmpSlice)
-			c.InactivityScores = append(c.InactivityScores, tmp)
+			c.InactivityScores[i] = tmp
 		}
 	}
 
