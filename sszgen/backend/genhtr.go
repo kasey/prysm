@@ -12,8 +12,7 @@ import (
 // nearest multiple of ChunkSize.
 const ChunkSize = 32
 
-var htrTmpl = `// HashTreeRoot ssz hashes the BeaconState object
-func ({{.Receiver}} {{.Type}}) XXHashTreeRoot() ([32]byte, error) {
+var htrTmpl = `func ({{.Receiver}} {{.Type}}) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := {{.Receiver}}.XXHashTreeRootWith(hh); err != nil {
 		ssz.DefaultHasherPool.Put(hh)

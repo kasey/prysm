@@ -53,8 +53,6 @@ func (c *BeaconBlocksByRangeRequest) XXUnmarshalSSZ(buf []byte) error {
 	c.Step = ssz.UnmarshallUint64(s2)
 	return err
 }
-
-// HashTreeRoot ssz hashes the BeaconState object
 func (c *BeaconBlocksByRangeRequest) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := c.XXHashTreeRootWith(hh); err != nil {
@@ -119,17 +117,17 @@ func (c *DepositMessage) XXUnmarshalSSZ(buf []byte) error {
 	s2 := buf[80:88] // c.Amount
 
 	// Field 0: PublicKey
-	c.PublicKey = append([]byte{}, s0...)
+	c.PublicKey = make([]byte, 0, 48)
+	c.PublicKey = append(c.PublicKey, s0...)
 
 	// Field 1: WithdrawalCredentials
-	c.WithdrawalCredentials = append([]byte{}, s1...)
+	c.WithdrawalCredentials = make([]byte, 0, 32)
+	c.WithdrawalCredentials = append(c.WithdrawalCredentials, s1...)
 
 	// Field 2: Amount
 	c.Amount = ssz.UnmarshallUint64(s2)
 	return err
 }
-
-// HashTreeRoot ssz hashes the BeaconState object
 func (c *DepositMessage) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := c.XXHashTreeRootWith(hh); err != nil {
@@ -200,17 +198,17 @@ func (c *ENRForkID) XXUnmarshalSSZ(buf []byte) error {
 	s2 := buf[8:16] // c.NextForkEpoch
 
 	// Field 0: CurrentForkDigest
-	c.CurrentForkDigest = append([]byte{}, s0...)
+	c.CurrentForkDigest = make([]byte, 0, 4)
+	c.CurrentForkDigest = append(c.CurrentForkDigest, s0...)
 
 	// Field 1: NextForkVersion
-	c.NextForkVersion = append([]byte{}, s1...)
+	c.NextForkVersion = make([]byte, 0, 4)
+	c.NextForkVersion = append(c.NextForkVersion, s1...)
 
 	// Field 2: NextForkEpoch
 	c.NextForkEpoch = prysmaticlabs_eth2_types.Epoch(ssz.UnmarshallUint64(s2))
 	return err
 }
-
-// HashTreeRoot ssz hashes the BeaconState object
 func (c *ENRForkID) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := c.XXHashTreeRootWith(hh); err != nil {
@@ -277,11 +275,10 @@ func (c *MetaDataV0) XXUnmarshalSSZ(buf []byte) error {
 	c.SeqNumber = ssz.UnmarshallUint64(s0)
 
 	// Field 1: Attnets
-	c.Attnets = append([]byte{}, prysmaticlabs_go_bitfield.Bitvector64(s1)...)
+	c.Attnets = make([]byte, 0, 8)
+	c.Attnets = append(c.Attnets, prysmaticlabs_go_bitfield.Bitvector64(s1)...)
 	return err
 }
-
-// HashTreeRoot ssz hashes the BeaconState object
 func (c *MetaDataV0) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := c.XXHashTreeRootWith(hh); err != nil {
@@ -350,14 +347,14 @@ func (c *MetaDataV1) XXUnmarshalSSZ(buf []byte) error {
 	c.SeqNumber = ssz.UnmarshallUint64(s0)
 
 	// Field 1: Attnets
-	c.Attnets = append([]byte{}, prysmaticlabs_go_bitfield.Bitvector64(s1)...)
+	c.Attnets = make([]byte, 0, 8)
+	c.Attnets = append(c.Attnets, prysmaticlabs_go_bitfield.Bitvector64(s1)...)
 
 	// Field 2: Syncnets
-	c.Syncnets = append([]byte{}, prysmaticlabs_go_bitfield.Bitvector512(s2)...)
+	c.Syncnets = make([]byte, 0, 64)
+	c.Syncnets = append(c.Syncnets, prysmaticlabs_go_bitfield.Bitvector512(s2)...)
 	return err
 }
-
-// HashTreeRoot ssz hashes the BeaconState object
 func (c *MetaDataV1) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := c.XXHashTreeRootWith(hh); err != nil {
@@ -428,17 +425,17 @@ func (c *Fork) XXUnmarshalSSZ(buf []byte) error {
 	s2 := buf[8:16] // c.Epoch
 
 	// Field 0: PreviousVersion
-	c.PreviousVersion = append([]byte{}, s0...)
+	c.PreviousVersion = make([]byte, 0, 4)
+	c.PreviousVersion = append(c.PreviousVersion, s0...)
 
 	// Field 1: CurrentVersion
-	c.CurrentVersion = append([]byte{}, s1...)
+	c.CurrentVersion = make([]byte, 0, 4)
+	c.CurrentVersion = append(c.CurrentVersion, s1...)
 
 	// Field 2: Epoch
 	c.Epoch = prysmaticlabs_eth2_types.Epoch(ssz.UnmarshallUint64(s2))
 	return err
 }
-
-// HashTreeRoot ssz hashes the BeaconState object
 func (c *Fork) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := c.XXHashTreeRootWith(hh); err != nil {
@@ -505,14 +502,14 @@ func (c *ForkData) XXUnmarshalSSZ(buf []byte) error {
 	s1 := buf[4:36] // c.GenesisValidatorsRoot
 
 	// Field 0: CurrentVersion
-	c.CurrentVersion = append([]byte{}, s0...)
+	c.CurrentVersion = make([]byte, 0, 4)
+	c.CurrentVersion = append(c.CurrentVersion, s0...)
 
 	// Field 1: GenesisValidatorsRoot
-	c.GenesisValidatorsRoot = append([]byte{}, s1...)
+	c.GenesisValidatorsRoot = make([]byte, 0, 32)
+	c.GenesisValidatorsRoot = append(c.GenesisValidatorsRoot, s1...)
 	return err
 }
-
-// HashTreeRoot ssz hashes the BeaconState object
 func (c *ForkData) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := c.XXHashTreeRootWith(hh); err != nil {
@@ -589,26 +586,28 @@ func (c *HistoricalBatch) XXUnmarshalSSZ(buf []byte) error {
 	// Field 0: BlockRoots
 	{
 		var tmp []byte
+		c.BlockRoots = make([][]byte, 8192)
 		for i := 0; i < 8192; i++ {
 			tmpSlice := s0[i*32 : (1+i)*32]
-			tmp = append([]byte{}, tmpSlice...)
-			c.BlockRoots = append(c.BlockRoots, tmp)
+			tmp = make([]byte, 0, 32)
+			tmp = append(tmp, tmpSlice...)
+			c.BlockRoots[i] = tmp
 		}
 	}
 
 	// Field 1: StateRoots
 	{
 		var tmp []byte
+		c.StateRoots = make([][]byte, 8192)
 		for i := 0; i < 8192; i++ {
 			tmpSlice := s1[i*32 : (1+i)*32]
-			tmp = append([]byte{}, tmpSlice...)
-			c.StateRoots = append(c.StateRoots, tmp)
+			tmp = make([]byte, 0, 32)
+			tmp = append(tmp, tmpSlice...)
+			c.StateRoots[i] = tmp
 		}
 	}
 	return err
 }
-
-// HashTreeRoot ssz hashes the BeaconState object
 func (c *HistoricalBatch) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := c.XXHashTreeRootWith(hh); err != nil {
@@ -706,23 +705,24 @@ func (c *Status) XXUnmarshalSSZ(buf []byte) error {
 	s4 := buf[76:84] // c.HeadSlot
 
 	// Field 0: ForkDigest
-	c.ForkDigest = append([]byte{}, s0...)
+	c.ForkDigest = make([]byte, 0, 4)
+	c.ForkDigest = append(c.ForkDigest, s0...)
 
 	// Field 1: FinalizedRoot
-	c.FinalizedRoot = append([]byte{}, s1...)
+	c.FinalizedRoot = make([]byte, 0, 32)
+	c.FinalizedRoot = append(c.FinalizedRoot, s1...)
 
 	// Field 2: FinalizedEpoch
 	c.FinalizedEpoch = prysmaticlabs_eth2_types.Epoch(ssz.UnmarshallUint64(s2))
 
 	// Field 3: HeadRoot
-	c.HeadRoot = append([]byte{}, s3...)
+	c.HeadRoot = make([]byte, 0, 32)
+	c.HeadRoot = append(c.HeadRoot, s3...)
 
 	// Field 4: HeadSlot
 	c.HeadSlot = prysmaticlabs_eth2_types.Slot(ssz.UnmarshallUint64(s4))
 	return err
 }
-
-// HashTreeRoot ssz hashes the BeaconState object
 func (c *Status) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := c.XXHashTreeRootWith(hh); err != nil {
@@ -1074,7 +1074,8 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 	c.GenesisTime = ssz.UnmarshallUint64(s0)
 
 	// Field 1: GenesisValidatorsRoot
-	c.GenesisValidatorsRoot = append([]byte{}, s1...)
+	c.GenesisValidatorsRoot = make([]byte, 0, 32)
+	c.GenesisValidatorsRoot = append(c.GenesisValidatorsRoot, s1...)
 
 	// Field 2: Slot
 	c.Slot = prysmaticlabs_eth2_types.Slot(ssz.UnmarshallUint64(s2))
@@ -1094,20 +1095,24 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 	// Field 5: BlockRoots
 	{
 		var tmp []byte
+		c.BlockRoots = make([][]byte, 8192)
 		for i := 0; i < 8192; i++ {
 			tmpSlice := s5[i*32 : (1+i)*32]
-			tmp = append([]byte{}, tmpSlice...)
-			c.BlockRoots = append(c.BlockRoots, tmp)
+			tmp = make([]byte, 0, 32)
+			tmp = append(tmp, tmpSlice...)
+			c.BlockRoots[i] = tmp
 		}
 	}
 
 	// Field 6: StateRoots
 	{
 		var tmp []byte
+		c.StateRoots = make([][]byte, 8192)
 		for i := 0; i < 8192; i++ {
 			tmpSlice := s6[i*32 : (1+i)*32]
-			tmp = append([]byte{}, tmpSlice...)
-			c.StateRoots = append(c.StateRoots, tmp)
+			tmp = make([]byte, 0, 32)
+			tmp = append(tmp, tmpSlice...)
+			c.StateRoots[i] = tmp
 		}
 	}
 
@@ -1124,7 +1129,8 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 			var tmp []byte
 
 			tmpSlice := s7[i*32 : (1+i)*32]
-			tmp = append([]byte{}, tmpSlice...)
+			tmp = make([]byte, 0, 32)
+			tmp = append(tmp, tmpSlice...)
 			c.HistoricalRoots = append(c.HistoricalRoots, tmp)
 		}
 	}
@@ -1199,20 +1205,23 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 	// Field 13: RandaoMixes
 	{
 		var tmp []byte
+		c.RandaoMixes = make([][]byte, 65536)
 		for i := 0; i < 65536; i++ {
 			tmpSlice := s13[i*32 : (1+i)*32]
-			tmp = append([]byte{}, tmpSlice...)
-			c.RandaoMixes = append(c.RandaoMixes, tmp)
+			tmp = make([]byte, 0, 32)
+			tmp = append(tmp, tmpSlice...)
+			c.RandaoMixes[i] = tmp
 		}
 	}
 
 	// Field 14: Slashings
 	{
 		var tmp uint64
+		c.Slashings = make([]uint64, 8192)
 		for i := 0; i < 8192; i++ {
 			tmpSlice := s14[i*8 : (1+i)*8]
 			tmp = ssz.UnmarshallUint64(tmpSlice)
-			c.Slashings = append(c.Slashings, tmp)
+			c.Slashings[i] = tmp
 		}
 	}
 
@@ -1285,7 +1294,8 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 	}
 
 	// Field 17: JustificationBits
-	c.JustificationBits = append([]byte{}, prysmaticlabs_go_bitfield.Bitvector4(s17)...)
+	c.JustificationBits = make([]byte, 0, 1)
+	c.JustificationBits = append(c.JustificationBits, prysmaticlabs_go_bitfield.Bitvector4(s17)...)
 
 	// Field 18: PreviousJustifiedCheckpoint
 	c.PreviousJustifiedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
@@ -1306,8 +1316,6 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 	}
 	return err
 }
-
-// HashTreeRoot ssz hashes the BeaconState object
 func (c *BeaconState) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := c.XXHashTreeRootWith(hh); err != nil {
@@ -1799,7 +1807,8 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 	c.GenesisTime = ssz.UnmarshallUint64(s0)
 
 	// Field 1: GenesisValidatorsRoot
-	c.GenesisValidatorsRoot = append([]byte{}, s1...)
+	c.GenesisValidatorsRoot = make([]byte, 0, 32)
+	c.GenesisValidatorsRoot = append(c.GenesisValidatorsRoot, s1...)
 
 	// Field 2: Slot
 	c.Slot = prysmaticlabs_eth2_types.Slot(ssz.UnmarshallUint64(s2))
@@ -1819,20 +1828,24 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 	// Field 5: BlockRoots
 	{
 		var tmp []byte
+		c.BlockRoots = make([][]byte, 8192)
 		for i := 0; i < 8192; i++ {
 			tmpSlice := s5[i*32 : (1+i)*32]
-			tmp = append([]byte{}, tmpSlice...)
-			c.BlockRoots = append(c.BlockRoots, tmp)
+			tmp = make([]byte, 0, 32)
+			tmp = append(tmp, tmpSlice...)
+			c.BlockRoots[i] = tmp
 		}
 	}
 
 	// Field 6: StateRoots
 	{
 		var tmp []byte
+		c.StateRoots = make([][]byte, 8192)
 		for i := 0; i < 8192; i++ {
 			tmpSlice := s6[i*32 : (1+i)*32]
-			tmp = append([]byte{}, tmpSlice...)
-			c.StateRoots = append(c.StateRoots, tmp)
+			tmp = make([]byte, 0, 32)
+			tmp = append(tmp, tmpSlice...)
+			c.StateRoots[i] = tmp
 		}
 	}
 
@@ -1849,7 +1862,8 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 			var tmp []byte
 
 			tmpSlice := s7[i*32 : (1+i)*32]
-			tmp = append([]byte{}, tmpSlice...)
+			tmp = make([]byte, 0, 32)
+			tmp = append(tmp, tmpSlice...)
 			c.HistoricalRoots = append(c.HistoricalRoots, tmp)
 		}
 	}
@@ -1924,20 +1938,23 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 	// Field 13: RandaoMixes
 	{
 		var tmp []byte
+		c.RandaoMixes = make([][]byte, 65536)
 		for i := 0; i < 65536; i++ {
 			tmpSlice := s13[i*32 : (1+i)*32]
-			tmp = append([]byte{}, tmpSlice...)
-			c.RandaoMixes = append(c.RandaoMixes, tmp)
+			tmp = make([]byte, 0, 32)
+			tmp = append(tmp, tmpSlice...)
+			c.RandaoMixes[i] = tmp
 		}
 	}
 
 	// Field 14: Slashings
 	{
 		var tmp uint64
+		c.Slashings = make([]uint64, 8192)
 		for i := 0; i < 8192; i++ {
 			tmpSlice := s14[i*8 : (1+i)*8]
 			tmp = ssz.UnmarshallUint64(tmpSlice)
-			c.Slashings = append(c.Slashings, tmp)
+			c.Slashings[i] = tmp
 		}
 	}
 
@@ -1948,7 +1965,8 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 	c.CurrentEpochParticipation = append([]byte{}, s16...)
 
 	// Field 17: JustificationBits
-	c.JustificationBits = append([]byte{}, prysmaticlabs_go_bitfield.Bitvector4(s17)...)
+	c.JustificationBits = make([]byte, 0, 1)
+	c.JustificationBits = append(c.JustificationBits, prysmaticlabs_go_bitfield.Bitvector4(s17)...)
 
 	// Field 18: PreviousJustifiedCheckpoint
 	c.PreviousJustifiedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
@@ -1999,8 +2017,6 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 	}
 	return err
 }
-
-// HashTreeRoot ssz hashes the BeaconState object
 func (c *BeaconStateAltair) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := c.XXHashTreeRootWith(hh); err != nil {
@@ -2273,8 +2289,6 @@ func (c *PendingAttestation) XXUnmarshalSSZ(buf []byte) error {
 	c.ProposerIndex = prysmaticlabs_eth2_types.ValidatorIndex(ssz.UnmarshallUint64(s3))
 	return err
 }
-
-// HashTreeRoot ssz hashes the BeaconState object
 func (c *PendingAttestation) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := c.XXHashTreeRootWith(hh); err != nil {
@@ -2342,14 +2356,14 @@ func (c *SigningData) XXUnmarshalSSZ(buf []byte) error {
 	s1 := buf[32:64] // c.Domain
 
 	// Field 0: ObjectRoot
-	c.ObjectRoot = append([]byte{}, s0...)
+	c.ObjectRoot = make([]byte, 0, 32)
+	c.ObjectRoot = append(c.ObjectRoot, s0...)
 
 	// Field 1: Domain
-	c.Domain = append([]byte{}, s1...)
+	c.Domain = make([]byte, 0, 32)
+	c.Domain = append(c.Domain, s1...)
 	return err
 }
-
-// HashTreeRoot ssz hashes the BeaconState object
 func (c *SigningData) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := c.XXHashTreeRootWith(hh); err != nil {
@@ -2421,19 +2435,20 @@ func (c *SyncCommittee) XXUnmarshalSSZ(buf []byte) error {
 	// Field 0: Pubkeys
 	{
 		var tmp []byte
+		c.Pubkeys = make([][]byte, 512)
 		for i := 0; i < 512; i++ {
 			tmpSlice := s0[i*48 : (1+i)*48]
-			tmp = append([]byte{}, tmpSlice...)
-			c.Pubkeys = append(c.Pubkeys, tmp)
+			tmp = make([]byte, 0, 48)
+			tmp = append(tmp, tmpSlice...)
+			c.Pubkeys[i] = tmp
 		}
 	}
 
 	// Field 1: AggregatePubkey
-	c.AggregatePubkey = append([]byte{}, s1...)
+	c.AggregatePubkey = make([]byte, 0, 48)
+	c.AggregatePubkey = append(c.AggregatePubkey, s1...)
 	return err
 }
-
-// HashTreeRoot ssz hashes the BeaconState object
 func (c *SyncCommittee) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := c.XXHashTreeRootWith(hh); err != nil {
@@ -2507,8 +2522,6 @@ func (c *SyncAggregatorSelectionData) XXUnmarshalSSZ(buf []byte) error {
 	c.SubcommitteeIndex = ssz.UnmarshallUint64(s1)
 	return err
 }
-
-// HashTreeRoot ssz hashes the BeaconState object
 func (c *SyncAggregatorSelectionData) XXHashTreeRoot() ([32]byte, error) {
 	hh := ssz.DefaultHasherPool.Get()
 	if err := c.XXHashTreeRootWith(hh); err != nil {

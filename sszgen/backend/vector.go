@@ -18,7 +18,9 @@ func (g *generateVector) generateUnmarshalValue(fieldName string, sliceName stri
 	gg := newValueGenerator(g.valRep.ElementValue, g.targetPackage)
 	switch g.valRep.ElementValue.(type) {
 	case *types.ValueByte:
-		return fmt.Sprintf("%s = append([]byte{}, %s...)", fieldName, g.casterConfig.toOverlay(sliceName))
+		t := `%s = make([]byte, 0, %d)
+%s = append(%s, %s...)`
+		return fmt.Sprintf(t, fieldName, g.valRep.Size, fieldName, fieldName, g.casterConfig.toOverlay(sliceName))
 	default:
 		loopVar := "i"
 		if fieldName[0:1] == "i" && monoCharacter(fieldName) {
@@ -26,10 +28,11 @@ func (g *generateVector) generateUnmarshalValue(fieldName string, sliceName stri
 		}
 		t := `{
 	var tmp {{ .TypeName }}
+	{{.FieldName}} = make([]{{.TypeName}}, {{.NumElements}})
 	for {{ .LoopVar }} := 0; {{ .LoopVar }} < {{ .NumElements }}; {{ .LoopVar }} ++ {
 		tmpSlice := {{ .SliceName }}[{{ .LoopVar }}*{{ .NestedFixedSize }}:(1+{{ .LoopVar }})*{{ .NestedFixedSize }}]
 {{ .NestedUnmarshal }}
-		{{ .FieldName }} = append({{ .FieldName }}, tmp)
+		{{ .FieldName }}[{{.LoopVar}}] = tmp
 	}
 }`
 		tmpl, err := template.New("tmplgenerateUnmarshalValueDefault").Parse(t)
@@ -37,7 +40,7 @@ func (g *generateVector) generateUnmarshalValue(fieldName string, sliceName stri
 			panic(err)
 		}
 		buf := bytes.NewBuffer(nil)
-		nvr := types.ValRep(g.valRep.ElementValue)
+		nvr := g.valRep.ElementValue
 		err = tmpl.Execute(buf, struct{
 			TypeName string
 			SliceName string
