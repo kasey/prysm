@@ -70,7 +70,7 @@ func (c *AggregateAttestationAndProof) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 1: Aggregate
 	c.Aggregate = new(Attestation)
-	if err = c.Aggregate.UnmarshalSSZ(s1); err != nil {
+	if err = c.Aggregate.XXUnmarshalSSZ(s1); err != nil {
 		return err
 	}
 
@@ -95,7 +95,7 @@ func (c *AggregateAttestationAndProof) XXHashTreeRootWith(hh *ssz.Hasher) (err e
 	// Field 0: AggregatorIndex
 	hh.PutUint64(uint64(c.AggregatorIndex))
 	// Field 1: Aggregate
-	if err := c.Aggregate.HashTreeRootWith(hh); err != nil {
+	if err := c.Aggregate.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 2: SelectionProof
@@ -172,7 +172,7 @@ func (c *Attestation) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 1: Data
 	c.Data = new(AttestationData)
-	if err = c.Data.UnmarshalSSZ(s1); err != nil {
+	if err = c.Data.XXUnmarshalSSZ(s1); err != nil {
 		return err
 	}
 
@@ -200,7 +200,7 @@ func (c *Attestation) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 	}
 	hh.PutBitlist(c.AggregationBits, 2048)
 	// Field 1: Data
-	if err := c.Data.HashTreeRootWith(hh); err != nil {
+	if err := c.Data.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 2: Signature
@@ -279,13 +279,13 @@ func (c *AttestationData) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 3: Source
 	c.Source = new(Checkpoint)
-	if err = c.Source.UnmarshalSSZ(s3); err != nil {
+	if err = c.Source.XXUnmarshalSSZ(s3); err != nil {
 		return err
 	}
 
 	// Field 4: Target
 	c.Target = new(Checkpoint)
-	if err = c.Target.UnmarshalSSZ(s4); err != nil {
+	if err = c.Target.XXUnmarshalSSZ(s4); err != nil {
 		return err
 	}
 	return err
@@ -313,11 +313,11 @@ func (c *AttestationData) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 	}
 	hh.PutBytes(c.BeaconBlockRoot)
 	// Field 3: Source
-	if err := c.Source.HashTreeRootWith(hh); err != nil {
+	if err := c.Source.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 4: Target
-	if err := c.Target.HashTreeRootWith(hh); err != nil {
+	if err := c.Target.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	hh.Merkleize(indx)
@@ -392,13 +392,13 @@ func (c *AttesterSlashing) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 0: Attestation_1
 	c.Attestation_1 = new(IndexedAttestation)
-	if err = c.Attestation_1.UnmarshalSSZ(s0); err != nil {
+	if err = c.Attestation_1.XXUnmarshalSSZ(s0); err != nil {
 		return err
 	}
 
 	// Field 1: Attestation_2
 	c.Attestation_2 = new(IndexedAttestation)
-	if err = c.Attestation_2.UnmarshalSSZ(s1); err != nil {
+	if err = c.Attestation_2.XXUnmarshalSSZ(s1); err != nil {
 		return err
 	}
 	return err
@@ -417,11 +417,11 @@ func (c *AttesterSlashing) XXHashTreeRoot() ([32]byte, error) {
 func (c *AttesterSlashing) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 	indx := hh.Index()
 	// Field 0: Attestation_1
-	if err := c.Attestation_1.HashTreeRootWith(hh); err != nil {
+	if err := c.Attestation_1.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 1: Attestation_2
-	if err := c.Attestation_2.HashTreeRootWith(hh); err != nil {
+	if err := c.Attestation_2.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	hh.Merkleize(indx)
@@ -512,7 +512,7 @@ func (c *BeaconBlock) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 4: Body
 	c.Body = new(BeaconBlockBody)
-	if err = c.Body.UnmarshalSSZ(s4); err != nil {
+	if err = c.Body.XXUnmarshalSSZ(s4); err != nil {
 		return err
 	}
 	return err
@@ -545,7 +545,7 @@ func (c *BeaconBlock) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 	}
 	hh.PutBytes(c.StateRoot)
 	// Field 4: Body
-	if err := c.Body.HashTreeRootWith(hh); err != nil {
+	if err := c.Body.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	hh.Merkleize(indx)
@@ -748,7 +748,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 1: Eth1Data
 	c.Eth1Data = new(Eth1Data)
-	if err = c.Eth1Data.UnmarshalSSZ(s1); err != nil {
+	if err = c.Eth1Data.XXUnmarshalSSZ(s1); err != nil {
 		return err
 	}
 
@@ -770,7 +770,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 			var tmp *ProposerSlashing
 			tmp = new(ProposerSlashing)
 			tmpSlice := s3[i*416 : (1+i)*416]
-			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+			if err = tmp.XXUnmarshalSSZ(tmpSlice); err != nil {
 				return err
 			}
 			c.ProposerSlashings[i] = tmp
@@ -804,7 +804,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 				} else {
 					tmpSlice = s4[listOffsets[i]:listOffsets[i+1]]
 				}
-				if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+				if err = tmp.XXUnmarshalSSZ(tmpSlice); err != nil {
 					return err
 				}
 				c.AttesterSlashings[i] = tmp
@@ -839,7 +839,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 				} else {
 					tmpSlice = s5[listOffsets[i]:listOffsets[i+1]]
 				}
-				if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+				if err = tmp.XXUnmarshalSSZ(tmpSlice); err != nil {
 					return err
 				}
 				c.Attestations[i] = tmp
@@ -861,7 +861,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 			var tmp *Deposit
 			tmp = new(Deposit)
 			tmpSlice := s6[i*1240 : (1+i)*1240]
-			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+			if err = tmp.XXUnmarshalSSZ(tmpSlice); err != nil {
 				return err
 			}
 			c.Deposits[i] = tmp
@@ -882,7 +882,7 @@ func (c *BeaconBlockBody) XXUnmarshalSSZ(buf []byte) error {
 			var tmp *SignedVoluntaryExit
 			tmp = new(SignedVoluntaryExit)
 			tmpSlice := s7[i*112 : (1+i)*112]
-			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+			if err = tmp.XXUnmarshalSSZ(tmpSlice); err != nil {
 				return err
 			}
 			c.VoluntaryExits[i] = tmp
@@ -909,7 +909,7 @@ func (c *BeaconBlockBody) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 	}
 	hh.PutBytes(c.RandaoReveal)
 	// Field 1: Eth1Data
-	if err := c.Eth1Data.HashTreeRootWith(hh); err != nil {
+	if err := c.Eth1Data.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 2: Graffiti
@@ -924,7 +924,7 @@ func (c *BeaconBlockBody) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		}
 		subIndx := hh.Index()
 		for _, o := range c.ProposerSlashings {
-			if err := o.HashTreeRootWith(hh); err != nil {
+			if err := o.XXHashTreeRootWith(hh); err != nil {
 				return err
 			}
 		}
@@ -937,7 +937,7 @@ func (c *BeaconBlockBody) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		}
 		subIndx := hh.Index()
 		for _, o := range c.AttesterSlashings {
-			if err := o.HashTreeRootWith(hh); err != nil {
+			if err := o.XXHashTreeRootWith(hh); err != nil {
 				return err
 			}
 		}
@@ -950,7 +950,7 @@ func (c *BeaconBlockBody) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		}
 		subIndx := hh.Index()
 		for _, o := range c.Attestations {
-			if err := o.HashTreeRootWith(hh); err != nil {
+			if err := o.XXHashTreeRootWith(hh); err != nil {
 				return err
 			}
 		}
@@ -963,7 +963,7 @@ func (c *BeaconBlockBody) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		}
 		subIndx := hh.Index()
 		for _, o := range c.Deposits {
-			if err := o.HashTreeRootWith(hh); err != nil {
+			if err := o.XXHashTreeRootWith(hh); err != nil {
 				return err
 			}
 		}
@@ -976,7 +976,7 @@ func (c *BeaconBlockBody) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		}
 		subIndx := hh.Index()
 		for _, o := range c.VoluntaryExits {
-			if err := o.HashTreeRootWith(hh); err != nil {
+			if err := o.XXHashTreeRootWith(hh); err != nil {
 				return err
 			}
 		}
@@ -1214,7 +1214,7 @@ func (c *Deposit) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 1: Data
 	c.Data = new(Deposit_Data)
-	if err = c.Data.UnmarshalSSZ(s1); err != nil {
+	if err = c.Data.XXUnmarshalSSZ(s1); err != nil {
 		return err
 	}
 	return err
@@ -1247,7 +1247,7 @@ func (c *Deposit) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		hh.Merkleize(subIndx)
 	}
 	// Field 1: Data
-	if err := c.Data.HashTreeRootWith(hh); err != nil {
+	if err := c.Data.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	hh.Merkleize(indx)
@@ -1512,7 +1512,7 @@ func (c *IndexedAttestation) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 1: Data
 	c.Data = new(AttestationData)
-	if err = c.Data.UnmarshalSSZ(s1); err != nil {
+	if err = c.Data.XXUnmarshalSSZ(s1); err != nil {
 		return err
 	}
 
@@ -1548,7 +1548,7 @@ func (c *IndexedAttestation) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		hh.MerkleizeWithMixin(subIndx, numItems, ssz.CalculateLimit(2048, numItems, 8))
 	}
 	// Field 1: Data
-	if err := c.Data.HashTreeRootWith(hh); err != nil {
+	if err := c.Data.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 2: Signature
@@ -1602,13 +1602,13 @@ func (c *ProposerSlashing) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 0: Header_1
 	c.Header_1 = new(SignedBeaconBlockHeader)
-	if err = c.Header_1.UnmarshalSSZ(s0); err != nil {
+	if err = c.Header_1.XXUnmarshalSSZ(s0); err != nil {
 		return err
 	}
 
 	// Field 1: Header_2
 	c.Header_2 = new(SignedBeaconBlockHeader)
-	if err = c.Header_2.UnmarshalSSZ(s1); err != nil {
+	if err = c.Header_2.XXUnmarshalSSZ(s1); err != nil {
 		return err
 	}
 	return err
@@ -1627,11 +1627,11 @@ func (c *ProposerSlashing) XXHashTreeRoot() ([32]byte, error) {
 func (c *ProposerSlashing) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 	indx := hh.Index()
 	// Field 0: Header_1
-	if err := c.Header_1.HashTreeRootWith(hh); err != nil {
+	if err := c.Header_1.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 1: Header_2
-	if err := c.Header_2.HashTreeRootWith(hh); err != nil {
+	if err := c.Header_2.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	hh.Merkleize(indx)
@@ -1693,7 +1693,7 @@ func (c *SignedAggregateAttestationAndProof) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 0: Message
 	c.Message = new(AggregateAttestationAndProof)
-	if err = c.Message.UnmarshalSSZ(s0); err != nil {
+	if err = c.Message.XXUnmarshalSSZ(s0); err != nil {
 		return err
 	}
 
@@ -1716,7 +1716,7 @@ func (c *SignedAggregateAttestationAndProof) XXHashTreeRoot() ([32]byte, error) 
 func (c *SignedAggregateAttestationAndProof) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 	indx := hh.Index()
 	// Field 0: Message
-	if err := c.Message.HashTreeRootWith(hh); err != nil {
+	if err := c.Message.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 1: Signature
@@ -1783,7 +1783,7 @@ func (c *SignedBeaconBlock) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 0: Block
 	c.Block = new(BeaconBlock)
-	if err = c.Block.UnmarshalSSZ(s0); err != nil {
+	if err = c.Block.XXUnmarshalSSZ(s0); err != nil {
 		return err
 	}
 
@@ -1806,7 +1806,7 @@ func (c *SignedBeaconBlock) XXHashTreeRoot() ([32]byte, error) {
 func (c *SignedBeaconBlock) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 	indx := hh.Index()
 	// Field 0: Block
-	if err := c.Block.HashTreeRootWith(hh); err != nil {
+	if err := c.Block.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 1: Signature
@@ -1858,7 +1858,7 @@ func (c *SignedBeaconBlockHeader) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 0: Header
 	c.Header = new(BeaconBlockHeader)
-	if err = c.Header.UnmarshalSSZ(s0); err != nil {
+	if err = c.Header.XXUnmarshalSSZ(s0); err != nil {
 		return err
 	}
 
@@ -1881,7 +1881,7 @@ func (c *SignedBeaconBlockHeader) XXHashTreeRoot() ([32]byte, error) {
 func (c *SignedBeaconBlockHeader) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 	indx := hh.Index()
 	// Field 0: Header
-	if err := c.Header.HashTreeRootWith(hh); err != nil {
+	if err := c.Header.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 1: Signature
@@ -1933,7 +1933,7 @@ func (c *SignedVoluntaryExit) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 0: Exit
 	c.Exit = new(VoluntaryExit)
-	if err = c.Exit.UnmarshalSSZ(s0); err != nil {
+	if err = c.Exit.XXUnmarshalSSZ(s0); err != nil {
 		return err
 	}
 
@@ -1956,7 +1956,7 @@ func (c *SignedVoluntaryExit) XXHashTreeRoot() ([32]byte, error) {
 func (c *SignedVoluntaryExit) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 	indx := hh.Index()
 	// Field 0: Exit
-	if err := c.Exit.HashTreeRootWith(hh); err != nil {
+	if err := c.Exit.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 1: Signature

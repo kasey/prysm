@@ -1082,13 +1082,13 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 3: Fork
 	c.Fork = new(Fork)
-	if err = c.Fork.UnmarshalSSZ(s3); err != nil {
+	if err = c.Fork.XXUnmarshalSSZ(s3); err != nil {
 		return err
 	}
 
 	// Field 4: LatestBlockHeader
 	c.LatestBlockHeader = new(prysmaticlabs_prysm_proto_eth_v1alpha1.BeaconBlockHeader)
-	if err = c.LatestBlockHeader.UnmarshalSSZ(s4); err != nil {
+	if err = c.LatestBlockHeader.XXUnmarshalSSZ(s4); err != nil {
 		return err
 	}
 
@@ -1138,7 +1138,7 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 8: Eth1Data
 	c.Eth1Data = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data)
-	if err = c.Eth1Data.UnmarshalSSZ(s8); err != nil {
+	if err = c.Eth1Data.XXUnmarshalSSZ(s8); err != nil {
 		return err
 	}
 
@@ -1156,7 +1156,7 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 			var tmp *prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data
 			tmp = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data)
 			tmpSlice := s9[i*72 : (1+i)*72]
-			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+			if err = tmp.XXUnmarshalSSZ(tmpSlice); err != nil {
 				return err
 			}
 			c.Eth1DataVotes[i] = tmp
@@ -1180,7 +1180,7 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 			var tmp *prysmaticlabs_prysm_proto_eth_v1alpha1.Validator
 			tmp = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Validator)
 			tmpSlice := s11[i*121 : (1+i)*121]
-			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+			if err = tmp.XXUnmarshalSSZ(tmpSlice); err != nil {
 				return err
 			}
 			c.Validators[i] = tmp
@@ -1256,7 +1256,7 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 				} else {
 					tmpSlice = s15[listOffsets[i]:listOffsets[i+1]]
 				}
-				if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+				if err = tmp.XXUnmarshalSSZ(tmpSlice); err != nil {
 					return err
 				}
 				c.PreviousEpochAttestations[i] = tmp
@@ -1291,7 +1291,7 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 				} else {
 					tmpSlice = s16[listOffsets[i]:listOffsets[i+1]]
 				}
-				if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+				if err = tmp.XXUnmarshalSSZ(tmpSlice); err != nil {
 					return err
 				}
 				c.CurrentEpochAttestations[i] = tmp
@@ -1305,19 +1305,19 @@ func (c *BeaconState) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 18: PreviousJustifiedCheckpoint
 	c.PreviousJustifiedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
-	if err = c.PreviousJustifiedCheckpoint.UnmarshalSSZ(s18); err != nil {
+	if err = c.PreviousJustifiedCheckpoint.XXUnmarshalSSZ(s18); err != nil {
 		return err
 	}
 
 	// Field 19: CurrentJustifiedCheckpoint
 	c.CurrentJustifiedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
-	if err = c.CurrentJustifiedCheckpoint.UnmarshalSSZ(s19); err != nil {
+	if err = c.CurrentJustifiedCheckpoint.XXUnmarshalSSZ(s19); err != nil {
 		return err
 	}
 
 	// Field 20: FinalizedCheckpoint
 	c.FinalizedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
-	if err = c.FinalizedCheckpoint.UnmarshalSSZ(s20); err != nil {
+	if err = c.FinalizedCheckpoint.XXUnmarshalSSZ(s20); err != nil {
 		return err
 	}
 	return err
@@ -1345,11 +1345,11 @@ func (c *BeaconState) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 	// Field 2: Slot
 	hh.PutUint64(uint64(c.Slot))
 	// Field 3: Fork
-	if err := c.Fork.HashTreeRootWith(hh); err != nil {
+	if err := c.Fork.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 4: LatestBlockHeader
-	if err := c.LatestBlockHeader.HashTreeRootWith(hh); err != nil {
+	if err := c.LatestBlockHeader.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 5: BlockRoots
@@ -1396,7 +1396,7 @@ func (c *BeaconState) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		hh.MerkleizeWithMixin(subIndx, numItems, ssz.CalculateLimit(16777216, numItems, 32))
 	}
 	// Field 8: Eth1Data
-	if err := c.Eth1Data.HashTreeRootWith(hh); err != nil {
+	if err := c.Eth1Data.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 9: Eth1DataVotes
@@ -1406,7 +1406,7 @@ func (c *BeaconState) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		}
 		subIndx := hh.Index()
 		for _, o := range c.Eth1DataVotes {
-			if err := o.HashTreeRootWith(hh); err != nil {
+			if err := o.XXHashTreeRootWith(hh); err != nil {
 				return err
 			}
 		}
@@ -1421,7 +1421,7 @@ func (c *BeaconState) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		}
 		subIndx := hh.Index()
 		for _, o := range c.Validators {
-			if err := o.HashTreeRootWith(hh); err != nil {
+			if err := o.XXHashTreeRootWith(hh); err != nil {
 				return err
 			}
 		}
@@ -1472,7 +1472,7 @@ func (c *BeaconState) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		}
 		subIndx := hh.Index()
 		for _, o := range c.PreviousEpochAttestations {
-			if err := o.HashTreeRootWith(hh); err != nil {
+			if err := o.XXHashTreeRootWith(hh); err != nil {
 				return err
 			}
 		}
@@ -1485,7 +1485,7 @@ func (c *BeaconState) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		}
 		subIndx := hh.Index()
 		for _, o := range c.CurrentEpochAttestations {
-			if err := o.HashTreeRootWith(hh); err != nil {
+			if err := o.XXHashTreeRootWith(hh); err != nil {
 				return err
 			}
 		}
@@ -1497,15 +1497,15 @@ func (c *BeaconState) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 	}
 	hh.PutBytes([]byte(c.JustificationBits))
 	// Field 18: PreviousJustifiedCheckpoint
-	if err := c.PreviousJustifiedCheckpoint.HashTreeRootWith(hh); err != nil {
+	if err := c.PreviousJustifiedCheckpoint.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 19: CurrentJustifiedCheckpoint
-	if err := c.CurrentJustifiedCheckpoint.HashTreeRootWith(hh); err != nil {
+	if err := c.CurrentJustifiedCheckpoint.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 20: FinalizedCheckpoint
-	if err := c.FinalizedCheckpoint.HashTreeRootWith(hh); err != nil {
+	if err := c.FinalizedCheckpoint.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	hh.Merkleize(indx)
@@ -1821,13 +1821,13 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 3: Fork
 	c.Fork = new(Fork)
-	if err = c.Fork.UnmarshalSSZ(s3); err != nil {
+	if err = c.Fork.XXUnmarshalSSZ(s3); err != nil {
 		return err
 	}
 
 	// Field 4: LatestBlockHeader
 	c.LatestBlockHeader = new(prysmaticlabs_prysm_proto_eth_v1alpha1.BeaconBlockHeader)
-	if err = c.LatestBlockHeader.UnmarshalSSZ(s4); err != nil {
+	if err = c.LatestBlockHeader.XXUnmarshalSSZ(s4); err != nil {
 		return err
 	}
 
@@ -1877,7 +1877,7 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 8: Eth1Data
 	c.Eth1Data = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data)
-	if err = c.Eth1Data.UnmarshalSSZ(s8); err != nil {
+	if err = c.Eth1Data.XXUnmarshalSSZ(s8); err != nil {
 		return err
 	}
 
@@ -1895,7 +1895,7 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 			var tmp *prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data
 			tmp = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Eth1Data)
 			tmpSlice := s9[i*72 : (1+i)*72]
-			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+			if err = tmp.XXUnmarshalSSZ(tmpSlice); err != nil {
 				return err
 			}
 			c.Eth1DataVotes[i] = tmp
@@ -1919,7 +1919,7 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 			var tmp *prysmaticlabs_prysm_proto_eth_v1alpha1.Validator
 			tmp = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Validator)
 			tmpSlice := s11[i*121 : (1+i)*121]
-			if err = tmp.UnmarshalSSZ(tmpSlice); err != nil {
+			if err = tmp.XXUnmarshalSSZ(tmpSlice); err != nil {
 				return err
 			}
 			c.Validators[i] = tmp
@@ -1980,19 +1980,19 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 18: PreviousJustifiedCheckpoint
 	c.PreviousJustifiedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
-	if err = c.PreviousJustifiedCheckpoint.UnmarshalSSZ(s18); err != nil {
+	if err = c.PreviousJustifiedCheckpoint.XXUnmarshalSSZ(s18); err != nil {
 		return err
 	}
 
 	// Field 19: CurrentJustifiedCheckpoint
 	c.CurrentJustifiedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
-	if err = c.CurrentJustifiedCheckpoint.UnmarshalSSZ(s19); err != nil {
+	if err = c.CurrentJustifiedCheckpoint.XXUnmarshalSSZ(s19); err != nil {
 		return err
 	}
 
 	// Field 20: FinalizedCheckpoint
 	c.FinalizedCheckpoint = new(prysmaticlabs_prysm_proto_eth_v1alpha1.Checkpoint)
-	if err = c.FinalizedCheckpoint.UnmarshalSSZ(s20); err != nil {
+	if err = c.FinalizedCheckpoint.XXUnmarshalSSZ(s20); err != nil {
 		return err
 	}
 
@@ -2017,13 +2017,13 @@ func (c *BeaconStateAltair) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 22: CurrentSyncCommittee
 	c.CurrentSyncCommittee = new(SyncCommittee)
-	if err = c.CurrentSyncCommittee.UnmarshalSSZ(s22); err != nil {
+	if err = c.CurrentSyncCommittee.XXUnmarshalSSZ(s22); err != nil {
 		return err
 	}
 
 	// Field 23: NextSyncCommittee
 	c.NextSyncCommittee = new(SyncCommittee)
-	if err = c.NextSyncCommittee.UnmarshalSSZ(s23); err != nil {
+	if err = c.NextSyncCommittee.XXUnmarshalSSZ(s23); err != nil {
 		return err
 	}
 	return err
@@ -2051,11 +2051,11 @@ func (c *BeaconStateAltair) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 	// Field 2: Slot
 	hh.PutUint64(uint64(c.Slot))
 	// Field 3: Fork
-	if err := c.Fork.HashTreeRootWith(hh); err != nil {
+	if err := c.Fork.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 4: LatestBlockHeader
-	if err := c.LatestBlockHeader.HashTreeRootWith(hh); err != nil {
+	if err := c.LatestBlockHeader.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 5: BlockRoots
@@ -2102,7 +2102,7 @@ func (c *BeaconStateAltair) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		hh.MerkleizeWithMixin(subIndx, numItems, ssz.CalculateLimit(16777216, numItems, 32))
 	}
 	// Field 8: Eth1Data
-	if err := c.Eth1Data.HashTreeRootWith(hh); err != nil {
+	if err := c.Eth1Data.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 9: Eth1DataVotes
@@ -2112,7 +2112,7 @@ func (c *BeaconStateAltair) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		}
 		subIndx := hh.Index()
 		for _, o := range c.Eth1DataVotes {
-			if err := o.HashTreeRootWith(hh); err != nil {
+			if err := o.XXHashTreeRootWith(hh); err != nil {
 				return err
 			}
 		}
@@ -2127,7 +2127,7 @@ func (c *BeaconStateAltair) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		}
 		subIndx := hh.Index()
 		for _, o := range c.Validators {
-			if err := o.HashTreeRootWith(hh); err != nil {
+			if err := o.XXHashTreeRootWith(hh); err != nil {
 				return err
 			}
 		}
@@ -2187,15 +2187,15 @@ func (c *BeaconStateAltair) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 	}
 	hh.PutBytes([]byte(c.JustificationBits))
 	// Field 18: PreviousJustifiedCheckpoint
-	if err := c.PreviousJustifiedCheckpoint.HashTreeRootWith(hh); err != nil {
+	if err := c.PreviousJustifiedCheckpoint.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 19: CurrentJustifiedCheckpoint
-	if err := c.CurrentJustifiedCheckpoint.HashTreeRootWith(hh); err != nil {
+	if err := c.CurrentJustifiedCheckpoint.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 20: FinalizedCheckpoint
-	if err := c.FinalizedCheckpoint.HashTreeRootWith(hh); err != nil {
+	if err := c.FinalizedCheckpoint.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 21: InactivityScores
@@ -2212,11 +2212,11 @@ func (c *BeaconStateAltair) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 		hh.MerkleizeWithMixin(subIndx, numItems, ssz.CalculateLimit(1099511627776, numItems, 8))
 	}
 	// Field 22: CurrentSyncCommittee
-	if err := c.CurrentSyncCommittee.HashTreeRootWith(hh); err != nil {
+	if err := c.CurrentSyncCommittee.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 23: NextSyncCommittee
-	if err := c.NextSyncCommittee.HashTreeRootWith(hh); err != nil {
+	if err := c.NextSyncCommittee.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	hh.Merkleize(indx)
@@ -2289,7 +2289,7 @@ func (c *PendingAttestation) XXUnmarshalSSZ(buf []byte) error {
 
 	// Field 1: Data
 	c.Data = new(prysmaticlabs_prysm_proto_eth_v1alpha1.AttestationData)
-	if err = c.Data.UnmarshalSSZ(s1); err != nil {
+	if err = c.Data.XXUnmarshalSSZ(s1); err != nil {
 		return err
 	}
 
@@ -2319,7 +2319,7 @@ func (c *PendingAttestation) XXHashTreeRootWith(hh *ssz.Hasher) (err error) {
 	}
 	hh.PutBitlist(c.AggregationBits, 2048)
 	// Field 1: Data
-	if err := c.Data.HashTreeRootWith(hh); err != nil {
+	if err := c.Data.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}
 	// Field 2: InclusionDelay

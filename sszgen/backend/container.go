@@ -13,7 +13,7 @@ type generateContainer struct {
 }
 
 func (g *generateContainer) generateHTRPutter(fieldName string) string {
-	tmpl := `if err := %s.HashTreeRootWith(hh); err != nil {
+	tmpl := `if err := %s.XXHashTreeRootWith(hh); err != nil {
 		return err
 	}`
 	return fmt.Sprintf(tmpl, fieldName)
@@ -24,7 +24,7 @@ func (g *generateContainer) variableSizeSSZ(fieldName string) string {
 }
 
 func (g *generateContainer) generateUnmarshalValue(fieldName string, sliceName string) string {
-	t := `if err = %s.UnmarshalSSZ(%s); err != nil {
+	t := `if err = %s.XXUnmarshalSSZ(%s); err != nil {
 		return err
 	}`
 	return fmt.Sprintf(t, fieldName, sliceName)
