@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime/pprof"
+	"strings"
 	"time"
 
 	pbbeacon "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
@@ -25,6 +26,7 @@ const methodsetFast = "fastssz"
 
 var methodset string
 var benchmarkRepeat int
+var skipList string
 var benchmark = &cli.Command{
 	Name:    "benchmark",
 	ArgsUsage: "<path to spectest repository>",
@@ -36,6 +38,12 @@ var benchmark = &cli.Command{
 			Value:       "",
 			Usage:       "which methodset to evaluate, \"fastssz\" or \"methodical\"",
 			Destination: &methodset,
+		},
+		&cli.StringFlag{
+			Name:        "skip-list",
+			Value:       "",
+			Usage:       "comma-separated list of types to skip (useful for excluding that big ole BeaconState).",
+			Destination: &skipList,
 		},
 		&cli.IntFlag{
 			Name:        "repeat",
@@ -64,8 +72,15 @@ var benchmark = &cli.Command{
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 
+		skip := make(map[string]struct{})
+		if skipList != "" {
+			skipNames := strings.Split(skipList, ",")
+			for _, s := range skipNames {
+				skip[s] = struct{}{}
+			}
+		}
 		// use regex to parse test cases out of a dirwalk
-		tcs, err := findTestCases(spectestPath)
+		tcs, err := findTestCases(spectestPath, skip)
 		if err != nil {
 			return err
 		}
@@ -114,6 +129,11 @@ func executeTestCase(tc *TestCase, methodset string, repeat int) error {
 				if err != nil {
 					return err
 				}
+
+				_, err = essz.HashTreeRoot()
+				if err != nil {
+					return err
+				}
 			}
 			if methodset == methodsetMethodical {
 				err := essz.XXUnmarshalSSZ(b)
@@ -124,13 +144,17 @@ func executeTestCase(tc *TestCase, methodset string, repeat int) error {
 				if err != nil {
 					return err
 				}
+				_, err = essz.XXHashTreeRoot()
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
 	return nil
 }
 
-func findTestCases(path string) ([]*TestCase, error) {
+func findTestCases(path string, skip map[string]struct{}) ([]*TestCase, error) {
 	var re = regexp.MustCompile(`.*\/tests\/(mainnet|minimal)\/(altair|merge|phase0)\/ssz_static\/(.*)\/ssz_random\/(case_\d+)`)
 	tcs := make([]*TestCase, 0)
 	testCaseFromPath := func (path string, d fs.DirEntry, err error) error {
@@ -138,21 +162,23 @@ func findTestCases(path string) ([]*TestCase, error) {
 			return nil
 		}
 		parts := re.FindStringSubmatch(path)
-		if len(parts) != 5 || parts[1] == "" || parts[2] == "" || parts[3] == "" || parts[4] == "" {
+		if len(parts) != 5 {
 			return nil
 		}
-		/*
-		if parts[3] == "BeaconState" || parts[3] == "HistoricalBatch" {
-			return nil
-		}
-		*/
-		tcs = append(tcs, &TestCase{
+		tc := &TestCase{
 			path: path,
 			config: parts[1],
 			phase: parts[2],
 			typeName: parts[3],
 			caseId: parts[4],
-		})
+		}
+		if tc.config == "" || tc.phase == "" || tc.typeName == "" || tc.caseId == "" {
+			return nil
+		}
+		if _, ok := skip[tc.typeName]; ok {
+			return nil
+		}
+		tcs = append(tcs, tc)
 		return nil
 	}
 	err := filepath.WalkDir(path, testCaseFromPath)
