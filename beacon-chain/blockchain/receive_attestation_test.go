@@ -125,7 +125,7 @@ func TestProcessAttestations_Ok(t *testing.T) {
 	require.NoError(t, service.cfg.BeaconDB.SaveState(ctx, copied, tRoot))
 	require.NoError(t, service.cfg.ForkChoiceStore.ProcessBlock(ctx, 0, tRoot, tRoot, tRoot, 1, 1))
 	require.NoError(t, service.cfg.AttPool.SaveForkchoiceAttestations(atts))
-	service.processAttestations(ctx)
+	service.processAttestations(ctx, service.genesisTime)
 	require.Equal(t, 0, len(service.cfg.AttPool.ForkchoiceAttestations()))
 	require.LogsDoNotContain(t, hook, "Could not process attestation for fork choice")
 }
