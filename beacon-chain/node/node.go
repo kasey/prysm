@@ -15,6 +15,8 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/prysmaticlabs/prysm/beacon-chain/sync/checkpoint"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 	apigateway "github.com/prysmaticlabs/prysm/api/gateway"
@@ -98,6 +100,8 @@ type BeaconNode struct {
 	slasherAttestationsFeed *event.Feed
 	finalizedStateAtStartUp state.BeaconState
 	serviceFlagOpts         *serviceFlagOpts
+	blockchainFlagOpts      []blockchain.Option
+	CheckpointInitializer   *checkpoint.Initializer
 }
 
 // New creates a new node instance, sets up configuration options, and registers
@@ -213,7 +217,7 @@ func New(cliCtx *cli.Context, opts ...Option) (*BeaconNode, error) {
 
 	// db.DatabasePath is the path to the containing directory
 	// db.NewDBFilename expands that to the canonical full path using
-	// the same constuction as NewDB()
+	// the same construction as NewDB()
 	c, err := newBeaconNodePromCollector(db.NewDBFilename(beacon.db.DatabasePath()))
 	if err != nil {
 		return nil, err
@@ -367,6 +371,13 @@ func (b *BeaconNode) startDB(cliCtx *cli.Context, depositAddress string) error {
 	if err := b.db.EnsureEmbeddedGenesis(b.ctx); err != nil {
 		return err
 	}
+
+	if b.CheckpointInitializer != nil {
+		if err := b.CheckpointInitializer.Initialize(b.ctx, d); err != nil {
+			return err
+		}
+	}
+
 	knownContract, err := b.db.DepositContractAddress(b.ctx)
 	if err != nil {
 		return err
