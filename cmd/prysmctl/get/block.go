@@ -1,8 +1,9 @@
 package get
 
 import (
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/prysmaticlabs/prysm/api/client/openapi"
 	log "github.com/sirupsen/logrus"

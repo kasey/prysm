@@ -4,10 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/pkg/errors"
-	"github.com/prysmaticlabs/prysm/config/params"
-	"github.com/prysmaticlabs/prysm/encoding/bytesutil"
 	"io"
 	"io/ioutil"
 	"net"
@@ -18,7 +14,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/pkg/errors"
 	types "github.com/prysmaticlabs/eth2-types"
+	"github.com/prysmaticlabs/prysm/config/params"
+	"github.com/prysmaticlabs/prysm/encoding/bytesutil"
 	ethpb "github.com/prysmaticlabs/prysm/proto/prysm/v1alpha1"
 	log "github.com/sirupsen/logrus"
 )

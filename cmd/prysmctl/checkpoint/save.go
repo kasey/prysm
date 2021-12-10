@@ -3,14 +3,14 @@ package checkpoint
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
-	types "github.com/prysmaticlabs/eth2-types"
-	"github.com/prysmaticlabs/prysm/proto/sniff"
 	"io"
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
+	types "github.com/prysmaticlabs/eth2-types"
 	"github.com/prysmaticlabs/prysm/api/client/openapi"
+	"github.com/prysmaticlabs/prysm/proto/sniff"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )

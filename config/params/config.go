@@ -3,11 +3,11 @@ package params
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"sort"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
 	types "github.com/prysmaticlabs/eth2-types"
 	"github.com/prysmaticlabs/prysm/encoding/bytesutil"
 )
