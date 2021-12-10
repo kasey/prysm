@@ -175,17 +175,6 @@ func (c *Client) GetBlockBySlot(slot uint64) (io.Reader, error) {
 		return nil, non200Err(r)
 	}
 	return r.Body, nil
-	/*
-
-	v := &ethpb.SignedBeaconBlockAltair{}
-	b := new(bytes.Buffer)
-	_, err = b.ReadFrom(r.Body)
-	if err != nil {
-		return nil, err
-	}
-	err = v.UnmarshalSSZ(b.Bytes())
-	return v, err
-	 */
 }
 
 // GetBlockByRoot retrieves a SignedBeaconBlockAltair with the given root via the beacon node API
@@ -206,16 +195,6 @@ func (c *Client) GetBlockByRoot(blockHex string) (io.Reader, error) {
 		return nil, non200Err(r)
 	}
 	return r.Body, nil
-	/*
-	v := &ethpb.SignedBeaconBlockAltair{}
-	b := new(bytes.Buffer)
-	_, err = b.ReadFrom(r.Body)
-	if err != nil {
-		return nil, err
-	}
-	err = v.UnmarshalSSZ(b.Bytes())
-	return v, err
-	 */
 }
 
 // GetStateByRoot retrieves a BeaconStateAltair with the given root via the beacon node API
@@ -236,16 +215,6 @@ func (c *Client) GetStateByRoot(stateHex string) (io.Reader, error) {
 		return nil, non200Err(r)
 	}
 	return r.Body, nil
-	/*
-	v := &ethpb.BeaconStateAltair{}
-	b := new(bytes.Buffer)
-	_, err = b.ReadFrom(r.Body)
-	if err != nil {
-		return nil, err
-	}
-	err = v.UnmarshalSSZ(b.Bytes())
-	return v, err
-	 */
 }
 
 // GetStateBySlot retrieves a BeaconStateAltair at the given slot via the beacon node API
@@ -266,24 +235,13 @@ func (c *Client) GetStateBySlot(slot uint64) (io.Reader, error) {
 		return nil, non200Err(r)
 	}
 	return r.Body, nil
-
-	/*
-	v := &ethpb.BeaconStateAltair{}
-	b := new(bytes.Buffer)
-	_, err = b.ReadFrom(r.Body)
-	if err != nil {
-		return nil, err
-	}
-	err = v.UnmarshalSSZ(b.Bytes())
-	return v, err
-	 */
 }
 
 type forkScheduleResponse struct {
-	Data []struct{
+	Data []struct {
 		PreviousVersion string `json:"previous_version"`
-		CurrentVersion string `json:"current_version"`
-		Epoch string `json:"epoch"`
+		CurrentVersion  string `json:"current_version"`
+		Epoch           string `json:"epoch"`
 	}
 }
 
@@ -304,7 +262,7 @@ func (fsr *forkScheduleResponse) OrderedForkSchedule() (params.OrderedForkSchedu
 		version := bytesutil.ToBytes4(vSlice)
 		ofs = append(ofs, params.ForkScheduleEntry{
 			Version: version,
-			Epoch: types.Epoch(uint64(epoch)),
+			Epoch:   types.Epoch(uint64(epoch)),
 		})
 	}
 	sort.Sort(ofs)
