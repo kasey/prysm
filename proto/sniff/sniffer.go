@@ -75,9 +75,9 @@ var beaconStateEpoch = fieldSpec{
 type ConfigFork struct {
 	ConfigName params.ConfigName
 	Fork       params.ForkName
-	Config *params.BeaconChainConfig
-	Version [4]byte
-	Epoch  types.Epoch
+	Config     *params.BeaconChainConfig
+	Version    [4]byte
+	Epoch      types.Epoch
 }
 
 func ConfigForkForState(marshaled []byte) (*ConfigFork, error) {

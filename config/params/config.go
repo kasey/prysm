@@ -203,7 +203,7 @@ func (b *BeaconChainConfig) InitializeForkSchedule() {
 // ForkScheduleEntry is a Version+Epoch tuple for sorted storage in an OrderedForkSchedule
 type ForkScheduleEntry struct {
 	Version [4]byte
-	Epoch types.Epoch
+	Epoch   types.Epoch
 }
 
 // OrderedForkSchedule provides a type that can be used to sort the fork schedule and find the Version
@@ -211,9 +211,11 @@ type ForkScheduleEntry struct {
 type OrderedForkSchedule []ForkScheduleEntry
 
 // Len implements the Len method of sort.Interface
-func (o OrderedForkSchedule) Len() int           { return len(o) }
+func (o OrderedForkSchedule) Len() int { return len(o) }
+
 // Swap implements the Swap method of sort.Interface
-func (o OrderedForkSchedule) Swap(i, j int)      { o[i], o[j] = o[j], o[i] }
+func (o OrderedForkSchedule) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
+
 // Less implements the Less method of sort.Interface
 func (o OrderedForkSchedule) Less(i, j int) bool { return o[i].Epoch < o[j].Epoch }
 

@@ -22,7 +22,7 @@ func BeaconStateForConfigFork(marshaled []byte, cf *ConfigFork) (state.BeaconSta
 	if err != nil {
 		return nil, err
 	}
-	if cv != cf.Version{
+	if cv != cf.Version {
 		return nil, fmt.Errorf("state fork version mismatch, detected=%#x, expected=%#x", cv, cf.Version)
 	}
 	switch cf.Fork {
