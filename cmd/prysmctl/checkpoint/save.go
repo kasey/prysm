@@ -1,7 +1,12 @@
 package checkpoint
 
 import (
+	"context"
 	"fmt"
+	"github.com/pkg/errors"
+	types "github.com/prysmaticlabs/eth2-types"
+	"github.com/prysmaticlabs/prysm/proto/sniff"
+	"io"
 	"os"
 	"time"
 
@@ -9,8 +14,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
-
-const SLOTS_PER_EPOCH = 32
 
 var saveFlags = struct {
 	BeaconNodeHost string
@@ -78,33 +81,64 @@ func saveCheckpoint(client *openapi.Client) error {
 }
 
 func saveCheckpointByEpoch(client *openapi.Client, epoch uint64) error {
-	slot := epoch * SLOTS_PER_EPOCH
-
-	block, err := client.GetBlockBySlot(slot)
-	blockRoot, err := block.Block.HashTreeRoot()
+	ctx := context.Background()
+	// Fork schedule is used to query for chain config metadata that is used to unmarshal values with the correct type
+	fs, err := client.GetForkSchedule()
 	if err != nil {
 		return err
 	}
-	blockRootHex := fmt.Sprintf("%#x", blockRoot)
-	log.Printf("retrieved block at slot %d with root=%s", slot, fmt.Sprintf("%#x", blockRoot))
-	blockStateRoot := block.Block.StateRoot
+	version, err := fs.VersionForEpoch(types.Epoch(epoch))
+	if err != nil {
+		return err
+	}
+	cf, err := sniff.FindConfigFork(types.Epoch(epoch), version)
+	if err != nil {
+		return errors.Wrap(err, "beacon node provided an unrecognized fork schedule")
+	}
+	log.Printf("detected supported config for state & block version detection, name=%s, fork=%s", cf.ConfigName.String(), cf.Fork)
+
+	bSlot := epoch * uint64(cf.Config.SlotsPerEpoch)
+
+	blockReader, err := client.GetBlockBySlot(bSlot)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("failed to retrieve block bytes for slot %d from api", bSlot))
+	}
+	blockBytes, err := io.ReadAll(blockReader)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("failed to read response body for block at slot %d from api", bSlot))
+	}
+	block, err := sniff.BlockForConfigFork(blockBytes, cf)
+	blockRoot, err := block.Block().HashTreeRoot()
+	if err != nil {
+		return err
+	}
+	log.Printf("retrieved block at slot %d with root=%#x", bSlot, blockRoot)
+	blockStateRoot := block.Block().StateRoot()
 	log.Printf("retrieved block has state root %s", fmt.Sprintf("%#x", blockStateRoot))
 
 	// assigning this variable to make it extra obvious that the state slot is different
-	stateSlot := slot + 1
+	sSlot := bSlot + 1
 	// using the state at (slot % 32 = 1) instead of the epoch boundary ensures the
 	// next block applied to the state will have the block at the weak subjectivity checkpoint
 	// as its parent, satisfying prysm's sync code current verification that the parent block is present in the db
-	state, err := client.GetStateBySlot(stateSlot)
+	stateReader, err := client.GetStateBySlot(sSlot)
 	if err != nil {
 		return err
 	}
-	stateRoot, err := state.HashTreeRoot()
+	stateBytes, err := io.ReadAll(stateReader)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("failed to read response body for state at slot %d from api", sSlot))
+	}
+	state, err := sniff.BeaconStateForConfigFork(stateBytes, cf)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("unmarshaling state using auto-detected schema failed for state at slot %d", sSlot))
+	}
+	stateRoot, err := state.HashTreeRoot(ctx)
 	if err != nil {
 		return err
 	}
-	log.Printf("retrieved state for checkpoint at slot %d, w/ root=%s", slot, fmt.Sprintf("%#x", stateRoot))
-	latestBlockRoot, err := state.LatestBlockHeader.HashTreeRoot()
+	log.Printf("retrieved state for checkpoint at slot %d, w/ root=%s", sSlot, fmt.Sprintf("%#x", stateRoot))
+	latestBlockRoot, err := state.LatestBlockHeader().HashTreeRoot()
 	if err != nil {
 		return err
 	}
@@ -121,7 +155,7 @@ func saveCheckpointByEpoch(client *openapi.Client, epoch uint64) error {
 	if err != nil {
 		return err
 	}
-	blockPath := fmt.Sprintf("block-%s.ssz", blockRootHex)
+	blockPath := fname("block", cf, bSlot, blockRoot)
 	log.Printf("saving ssz-encoded block to to %s", blockPath)
 	err = os.WriteFile(blockPath, bb, 0644)
 	if err != nil {
@@ -132,7 +166,8 @@ func saveCheckpointByEpoch(client *openapi.Client, epoch uint64) error {
 	if err != nil {
 		return err
 	}
-	statePath := fmt.Sprintf("state-%s.ssz", fmt.Sprintf("%#x", stateRoot))
+	//statePath := fmt.Sprintf("state-%s.ssz", fmt.Sprintf("%#x", stateRoot))
+	statePath := fname("state", cf, sSlot, stateRoot)
 	log.Printf("saving ssz-encoded state to to %s", statePath)
 	err = os.WriteFile(statePath, sb, 0644)
 	if err != nil {
@@ -140,8 +175,12 @@ func saveCheckpointByEpoch(client *openapi.Client, epoch uint64) error {
 	}
 
 	fmt.Println("To validate that your client is using this checkpoint, specify the following flag when starting prysm:")
-	fmt.Printf("--weak-subjectivity-checkpoint=%s:%d\n\n", blockRootHex, epoch)
+	fmt.Printf("--weak-subjectivity-checkpoint=%#x:%d\n\n", blockRoot, epoch)
 	fmt.Println("To sync a new beacon node starting from the checkpoint state, you may specify the following flags (assuming the files are in your current working directory)")
-	fmt.Printf("--checkpoint-state=%s --checkpoint-block=%s\n", statePath, blockPath)
+	fmt.Printf("--checkpoint-block=%s --checkpoint-state=%s\n", blockPath, statePath)
 	return nil
+}
+
+func fname(prefix string, cf *sniff.ConfigFork, slot uint64, root [32]byte) string {
+	return fmt.Sprintf("%s_%s_%s_%d-%#x.ssz", prefix, cf.ConfigName.String(), cf.Fork.String(), slot, root)
 }

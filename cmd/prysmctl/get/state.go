@@ -1,12 +1,8 @@
 package get
 
 import (
-	"fmt"
-	"os"
-
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/pkg/errors"
 	"github.com/prysmaticlabs/prysm/api/client/openapi"
-	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
 
@@ -48,6 +44,8 @@ var getStateCmd = &cli.Command{
 }
 
 func saveStateByRoot(client *openapi.Client, root, path string) error {
+	return errors.New("saveStateByRoot not implemented")
+	/*
 	state, err := client.GetStateByRoot(root)
 	if err != nil {
 		return err
@@ -66,6 +64,7 @@ func saveStateByRoot(client *openapi.Client, root, path string) error {
 		return err
 	}
 	return os.WriteFile(path, blockBytes, 0644)
+	 */
 }
 
 func cliActionGetState(c *cli.Context) error {

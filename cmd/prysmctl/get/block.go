@@ -1,11 +1,9 @@
 package get
 
 import (
-	"fmt"
-	"os"
+	"github.com/pkg/errors"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/prysmaticlabs/prysm/api/client/openapi"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
@@ -69,6 +67,8 @@ func cliActionGetBlock(c *cli.Context) error {
 }
 
 func saveBlock(client *openapi.Client, root, path string) error {
+	return errors.New("saveStateByRoot not implemented")
+	/*
 	block, err := client.GetBlockByRoot(root)
 	if err != nil {
 		return err
@@ -87,4 +87,5 @@ func saveBlock(client *openapi.Client, root, path string) error {
 		return err
 	}
 	return os.WriteFile(path, blockBytes, 0644)
+	 */
 }

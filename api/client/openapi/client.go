@@ -1,16 +1,20 @@
 package openapi
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/pkg/errors"
+	"github.com/prysmaticlabs/prysm/config/params"
+	"github.com/prysmaticlabs/prysm/encoding/bytesutil"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
 	"path"
+	"sort"
 	"strconv"
 	"time"
 
@@ -23,6 +27,7 @@ const GET_WEAK_SUBJECTIVITY_CHECKPOINT_EPOCH_PATH = "/eth/v1alpha1/beacon/weak_s
 const GET_WEAK_SUBJECTIVITY_CHECKPOINT_PATH = "/eth/v1alpha1/beacon/weak_subjectivity_checkpoint"
 const GET_SIGNED_BLOCK_PATH = "/eth/v2/beacon/blocks"
 const GET_STATE_PATH = "/eth/v2/debug/beacon/states"
+const GET_FORK_SCHEDULE_PATH = "/eth/v1/config/fork_schedule"
 
 // ClientOpt is a functional option for the Client type (http.Client wrapper)
 type ClientOpt func(*Client)
@@ -128,9 +133,7 @@ func (c *Client) GetWeakSubjectivityCheckpoint() (*ethpb.WeakSubjectivityCheckpo
 		return nil, non200Err(r)
 	}
 	v := &wscResponse{}
-	b := bytes.NewBuffer(nil)
-	bodyReader := io.TeeReader(r.Body, b)
-	err = json.NewDecoder(bodyReader).Decode(v)
+	err = json.NewDecoder(r.Body).Decode(v)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +158,7 @@ func (c *Client) GetWeakSubjectivityCheckpoint() (*ethpb.WeakSubjectivityCheckpo
 
 // TODO: fix hardcoded pb type using sniff code
 // GetBlockBySlot queries the beacon node API for the SignedBeaconBlockAltair for the given slot
-func (c *Client) GetBlockBySlot(slot uint64) (*ethpb.SignedBeaconBlockAltair, error) {
+func (c *Client) GetBlockBySlot(slot uint64) (io.Reader, error) {
 	blockPath := path.Join(GET_SIGNED_BLOCK_PATH, strconv.FormatUint(slot, 10))
 	u := c.urlForPath(blockPath)
 	log.Printf("requesting %s", u.String())
@@ -171,6 +174,8 @@ func (c *Client) GetBlockBySlot(slot uint64) (*ethpb.SignedBeaconBlockAltair, er
 	if r.StatusCode != http.StatusOK {
 		return nil, non200Err(r)
 	}
+	return r.Body, nil
+	/*
 
 	v := &ethpb.SignedBeaconBlockAltair{}
 	b := new(bytes.Buffer)
@@ -180,10 +185,11 @@ func (c *Client) GetBlockBySlot(slot uint64) (*ethpb.SignedBeaconBlockAltair, er
 	}
 	err = v.UnmarshalSSZ(b.Bytes())
 	return v, err
+	 */
 }
 
 // GetBlockByRoot retrieves a SignedBeaconBlockAltair with the given root via the beacon node API
-func (c *Client) GetBlockByRoot(blockHex string) (*ethpb.SignedBeaconBlockAltair, error) {
+func (c *Client) GetBlockByRoot(blockHex string) (io.Reader, error) {
 	blockPath := path.Join(GET_SIGNED_BLOCK_PATH, blockHex)
 	u := c.urlForPath(blockPath)
 	log.Printf("requesting %s", u.String())
@@ -199,7 +205,8 @@ func (c *Client) GetBlockByRoot(blockHex string) (*ethpb.SignedBeaconBlockAltair
 	if r.StatusCode != http.StatusOK {
 		return nil, non200Err(r)
 	}
-
+	return r.Body, nil
+	/*
 	v := &ethpb.SignedBeaconBlockAltair{}
 	b := new(bytes.Buffer)
 	_, err = b.ReadFrom(r.Body)
@@ -208,10 +215,11 @@ func (c *Client) GetBlockByRoot(blockHex string) (*ethpb.SignedBeaconBlockAltair
 	}
 	err = v.UnmarshalSSZ(b.Bytes())
 	return v, err
+	 */
 }
 
 // GetStateByRoot retrieves a BeaconStateAltair with the given root via the beacon node API
-func (c *Client) GetStateByRoot(stateHex string) (*ethpb.BeaconStateAltair, error) {
+func (c *Client) GetStateByRoot(stateHex string) (io.Reader, error) {
 	statePath := path.Join(GET_STATE_PATH, stateHex)
 	u := c.urlForPath(statePath)
 	log.Printf("requesting %s", u.String())
@@ -227,7 +235,8 @@ func (c *Client) GetStateByRoot(stateHex string) (*ethpb.BeaconStateAltair, erro
 	if r.StatusCode != http.StatusOK {
 		return nil, non200Err(r)
 	}
-
+	return r.Body, nil
+	/*
 	v := &ethpb.BeaconStateAltair{}
 	b := new(bytes.Buffer)
 	_, err = b.ReadFrom(r.Body)
@@ -236,10 +245,11 @@ func (c *Client) GetStateByRoot(stateHex string) (*ethpb.BeaconStateAltair, erro
 	}
 	err = v.UnmarshalSSZ(b.Bytes())
 	return v, err
+	 */
 }
 
 // GetStateBySlot retrieves a BeaconStateAltair at the given slot via the beacon node API
-func (c *Client) GetStateBySlot(slot uint64) (*ethpb.BeaconStateAltair, error) {
+func (c *Client) GetStateBySlot(slot uint64) (io.Reader, error) {
 	statePath := path.Join(GET_STATE_PATH, strconv.FormatUint(slot, 10))
 	u := c.urlForPath(statePath)
 	log.Printf("requesting %s", u.String())
@@ -255,7 +265,9 @@ func (c *Client) GetStateBySlot(slot uint64) (*ethpb.BeaconStateAltair, error) {
 	if r.StatusCode != http.StatusOK {
 		return nil, non200Err(r)
 	}
+	return r.Body, nil
 
+	/*
 	v := &ethpb.BeaconStateAltair{}
 	b := new(bytes.Buffer)
 	_, err = b.ReadFrom(r.Body)
@@ -264,6 +276,61 @@ func (c *Client) GetStateBySlot(slot uint64) (*ethpb.BeaconStateAltair, error) {
 	}
 	err = v.UnmarshalSSZ(b.Bytes())
 	return v, err
+	 */
+}
+
+type forkScheduleResponse struct {
+	Data []struct{
+		PreviousVersion string `json:"previous_version"`
+		CurrentVersion string `json:"current_version"`
+		Epoch string `json:"epoch"`
+	}
+}
+
+func (fsr *forkScheduleResponse) OrderedForkSchedule() (params.OrderedForkSchedule, error) {
+	ofs := make(params.OrderedForkSchedule, 0)
+	for _, d := range fsr.Data {
+		epoch, err := strconv.Atoi(d.Epoch)
+		if err != nil {
+			return nil, err
+		}
+		vSlice, err := hexutil.Decode(d.CurrentVersion)
+		if err != nil {
+			return nil, err
+		}
+		if len(vSlice) != 4 {
+			return nil, fmt.Errorf("got %d byte version, expected 4 bytes. version hex=%s", len(vSlice), d.CurrentVersion)
+		}
+		version := bytesutil.ToBytes4(vSlice)
+		ofs = append(ofs, params.ForkScheduleEntry{
+			Version: version,
+			Epoch: types.Epoch(uint64(epoch)),
+		})
+	}
+	sort.Sort(ofs)
+	return ofs, nil
+}
+
+func (c *Client) GetForkSchedule() (params.OrderedForkSchedule, error) {
+	u := c.urlForPath(GET_FORK_SCHEDULE_PATH)
+	log.Printf("requesting %s", u.String())
+	r, err := c.c.Get(u.String())
+	if err != nil {
+		return nil, err
+	}
+	if r.StatusCode != http.StatusOK {
+		return nil, non200Err(r)
+	}
+	fsr := &forkScheduleResponse{}
+	err = json.NewDecoder(r.Body).Decode(fsr)
+	if err != nil {
+		return nil, err
+	}
+	ofs, err := fsr.OrderedForkSchedule()
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("problem unmarshaling %s response", GET_FORK_SCHEDULE_PATH))
+	}
+	return ofs, nil
 }
 
 func non200Err(response *http.Response) error {
