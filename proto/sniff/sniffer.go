@@ -96,6 +96,14 @@ func CurrentVersionFromState(marshaled []byte) ([4]byte, error) {
 	return beaconStateCurrentVersion.Bytes4(marshaled)
 }
 
+func EpochFromState(marshaled []byte) (types.Epoch, error) {
+	epoch, err := beaconStateEpoch.Uint64(marshaled)
+	if err != nil {
+		return types.Epoch(0), err
+	}
+	return types.Epoch(epoch), nil
+}
+
 func FindConfigFork(epoch types.Epoch, cv [4]byte) (*ConfigFork, error) {
 	cf := &ConfigFork{
 		Version: cv,

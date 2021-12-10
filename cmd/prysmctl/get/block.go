@@ -70,23 +70,23 @@ func cliActionGetBlock(c *cli.Context) error {
 func saveBlock(client *openapi.Client, root, path string) error {
 	return errors.New("saveStateByRoot not implemented")
 	/*
-	block, err := client.GetBlockByRoot(root)
-	if err != nil {
-		return err
-	}
-	blockRoot, err := block.Block.HashTreeRoot()
-	if err != nil {
-		return err
-	}
-	log.Printf("retrieved block for checkpoint, w/ block (header) root=%s", hexutil.Encode(blockRoot[:]))
-	if path == "" {
-		path = fmt.Sprintf("block-%s.ssz", root)
-	}
-	log.Printf("saving to %s...", path)
-	blockBytes, err := block.MarshalSSZ()
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, blockBytes, 0644)
-	 */
+		block, err := client.GetBlockByRoot(root)
+		if err != nil {
+			return err
+		}
+		blockRoot, err := block.Block.HashTreeRoot()
+		if err != nil {
+			return err
+		}
+		log.Printf("retrieved block for checkpoint, w/ block (header) root=%s", hexutil.Encode(blockRoot[:]))
+		if path == "" {
+			path = fmt.Sprintf("block-%s.ssz", root)
+		}
+		log.Printf("saving to %s...", path)
+		blockBytes, err := block.MarshalSSZ()
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(path, blockBytes, 0644)
+	*/
 }
