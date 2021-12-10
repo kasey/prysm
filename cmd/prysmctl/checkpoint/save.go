@@ -129,6 +129,7 @@ func saveCheckpointByEpoch(client *openapi.Client, epoch uint64) error {
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("failed to read response body for state at slot %d from api", sSlot))
 	}
+	log.Printf("state response byte len=%d", len(stateBytes))
 	state, err := sniff.BeaconStateForConfigFork(stateBytes, cf)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("unmarshaling state using auto-detected schema failed for state at slot %d", sSlot))
