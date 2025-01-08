@@ -20,6 +20,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: OffchainLabs/unclog
           name: unclog
+          run-id: 12679708867
 
       - name: Get new changelog files
         id: new-changelog-files
